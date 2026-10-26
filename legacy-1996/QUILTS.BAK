@@ -1,0 +1,2232 @@
+{-------------------------------------------------}
+{ QUILTS V1.1                                     }
+{ written and (c) by Stefan Wolfrum in March 1996 }
+{-------------------------------------------------}
+
+program Quilts;
+
+uses graph, crt, dos;
+
+{$I svga256.inc}
+
+const
+   iniFileName   = 'quilts.ini';
+   cUP           = #72;
+   cDN           = #80;
+   cLE           = #75;
+   cRI           = #77;
+   cF1           = #59;
+   cF2           = #60;
+   cF3           = #61;
+   cF4           = #62;
+
+type
+   RGBtriple = record
+      r, g, b: byte;
+   end;
+   tPalette = array[0..255]of RGBtriple;
+
+   string12 = string[12];
+
+   pEntry = ^tEntry;
+   tEntry = record
+      name: string12;
+      next: pEntry;
+      prev: pEntry;
+   end;
+
+
+var
+   grDriver, grMode  : integer;
+
+   npixelx, npixely,
+   nstartx, nperiod,
+   minperiod, ncolor : integer;
+
+   x, y, xnew, ynew,
+   alpha, beta,
+   gamma, lambda,
+   omega, shift,
+   p2, p4, p6, merk  : extended;
+   merk2, err        : integer;
+   merk3, merk4      : string;
+
+   ma, a, b, sq3     : extended;
+   mxnew, mynew      : integer;
+   iter              : longint;
+
+   mcount            : array[0..160,0..160]of word;
+
+   key, keyx, dummy  : char;
+   palName           : string;
+   run, fastMode,
+   quadQuilt         : boolean;
+
+   error             : byte;
+   x1, y1, x2, y2, w : integer;
+   i, j              : integer;
+   P                 : Pointer;
+   imgSize, maxHit,
+   minHit            : word;
+   help              : extended;
+
+   k11, k12, k21, k22,
+   e111, e112, e121, e122, e131, e132,
+   em11, em12, em21, em22, em31, em32,
+   en11, en12, en21, en22, en31, en32,
+   enh11, enh12, enh21, enh22, enh31, enh32,
+   a11, a12, a21, a22, a31, a32,
+   ah11, ah12, ah21, ah22, ah31, ah32         : extended;
+
+   palette, merkPal : tPalette;
+
+   palPfad,
+   bgiDriverPath : string;
+
+   lowBorder : word;
+
+   palNames,ep1,ep2,
+   parNames         : pEntry;
+   DirInfo          : SearchRec;
+   lastName         : string12;
+
+
+
+{--------------------------------------------------------------------------}
+
+function min(a,b: byte): byte;
+begin
+   if a<b then
+      min := a
+   else
+      min := b;
+end;
+
+{--------------------------------------------------------------------------}
+
+function max(a,b: byte): byte;
+begin
+   if a>b then
+      max := a
+   else
+      max := b;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure setPalIndex(index: word; r, g, b: byte);
+begin
+   Port[$3c8] := index;
+   Port[$3c9] := r;
+   Port[$3c9] := g;
+   Port[$3c9] := b;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure saveTGA(filename: string);
+var
+   dat    : file of byte;
+   wrd    : word;
+   xx, yy : integer;
+
+   procedure writeVal(value: byte);
+   begin
+      write(dat, value);
+   end;
+
+begin
+   assign(dat, filename);
+   rewrite(dat);
+
+   writeVal($00);  { number of characters in identification field   }
+
+   writeVal($01);  { color map type; 1 for this kind of Targa files }
+                   { (uncompressed, color-mapped images)            }
+
+   writeVal($01);  { Image Type code; always 1 for this image type  }
+
+                   { COLOR MAP SPECIFICATION:                       }
+   writeVal($00);  { color map origin, lo-hi order }
+   writeVal($00);
+
+   writeVal($00);  { color map length, lo-hi order  }
+   writeVal($01);  { $00,$01 => $0100 => 256 colors }
+
+   writeVal(24);   { color map entry size; 24=3*8: 8 bits for each }
+                   { red, green and blue                           }
+
+                   { IMAGE SPECIFICATION:                          }
+   writeVal($00);  { x origin of image, (lower left corner), lo-hi }
+   writeVal($00);
+   writeVal($00);  { y origin of image, (lower left corner), lo-hi }
+   writeVal($00);
+
+   wrd := npixelx-nstartx+1;
+   wrd := npixelx+1;
+   writeVal(Lo(wrd));  { width, lo-hi }
+   writeVal(Hi(wrd));
+
+   wrd := npixely+1;
+   wrd := npixely+1;
+   writeVal(Lo(wrd));  { height, lo-hi }
+   writeVal(Hi(wrd));
+
+   writeVal($08);  { image pixel size, 8 bit per color component   }
+   writeVal($00);  { image descriptor byte; always 0?              }
+
+   { no image identification field... (see first written byte above!) }
+
+   { COLOR MAP DATA:                                                  }
+   { list of 3 byte entries, ordered blue, green, red!                }
+   { for the number of this 3-byte-lists see color map length above!  }
+   for i := 0 to 255 do begin
+      writeVal(palette[i].b);
+      writeVal(palette[i].g);
+      writeVal(palette[i].r);
+   end;
+
+   { IMAGE DATA FIELD:                                                  }
+   { This field specifies (width) x (height) color map indices. Each    }
+   { index is stored as an integral number of bytes (typically 1 or 2). }
+   { All fields are unsigned. The low-order byte of a two-byte field is }
+   { stored first.                                                      }
+
+   { remember: bottom to top format! }
+
+   for yy := npixely downto 0 do begin
+      putpixel(nstartx-1,yy,0);
+      for xx := nstartx to npixelx do begin
+         writeVal(getpixel(xx, yy));
+      end;
+   end;
+
+   close(dat);
+   setcolor(255);
+   line(nstartx-1,0,nstartx-1,npixely);
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure loadIniFile;
+var
+   dat  : text;
+   zeile: string;
+begin
+   assign(dat, iniFileName);
+   reset(dat);
+   zeile := '';
+   while not eof(dat) and not (zeile='[QUILTS]') do
+      readln(dat,zeile);
+   if not eof(dat) then begin
+      while not eof(dat) do begin
+         readln(dat, zeile);
+         if copy(zeile,1,12)='PalettePath=' then
+            palPfad := copy(zeile,13,length(zeile)-12) + '\';
+         if copy(zeile,1,14)='BGIdriverPath=' then
+            bgiDriverPath := copy(zeile,15,length(zeile)-14) + '\';
+      end;
+
+   end
+   else begin
+      palPfad := '.\';
+      bgiDriverPath := '.\';
+   end;
+
+   close(dat);
+{   writeln('PalettePath  : ',palPfad);
+   writeln('BGIdriverPath: ',bgiDriverPath);
+   readln;}
+end;
+
+{--------------------------------------------------------------------------}
+
+function loadPalette(filename: string) : integer;
+var
+   datei      : text;
+   zeile      : string;
+   r, g, b    : integer;
+   err        : integer;
+   p1, p2, p3 : integer;
+   s1, s2     : string;
+   index      : integer;
+
+begin
+   {$I-}
+   assign(datei, filename);
+   reset(datei);
+   {$I+}
+   if IOResult=0 then begin
+
+      index := 0;
+      while not eof(datei) and not (index>255) do begin
+         readln(datei, zeile);
+
+         { rot-Wert holen: }
+         p1 := 1;
+         while (ord(zeile[p1]) < ord('0')) or
+               (ord(zeile[p1]) > ord('9')) do
+            inc(p1);
+
+         p2 := p1;
+         while (ord(zeile[p2]) >= ord('0')) and
+               (ord(zeile[p2]) <= ord('9')) do
+            inc(p2);
+
+         s1 := copy(zeile, p1, p2-p1);
+         val(s1, r, err);
+
+
+         { grün-Wert holen: }
+         p1 := p2;
+         while (ord(zeile[p1]) < ord('0')) or
+               (ord(zeile[p1]) > ord('9')) do
+            inc(p1);
+
+         p2 := p1;
+         while (ord(zeile[p2]) >= ord('0')) and
+               (ord(zeile[p2]) <= ord('9')) do
+            inc(p2);
+
+         s1 := copy(zeile, p1, p2-p1);
+         val(s1, g, err);
+
+
+         { blau-Wert holen: }
+         p1 := p2;
+         while (ord(zeile[p1]) < ord('0')) or
+               (ord(zeile[p1]) > ord('9')) do
+            inc(p1);
+
+         p2 := p1;
+         while (ord(zeile[p2]) >= ord('0')) and
+               (ord(zeile[p2]) <= ord('9')) do
+            inc(p2);
+
+         s1 := copy(zeile, p1, p2-p1);
+         val(s1, b, err);
+
+{         setPalIndex(index, r div 4, g div 4, b div 4);}
+         setPalIndex(index, r div 4, g div 4, b div 4);
+         palette[index].r := r;
+         palette[index].g := g;
+         palette[index].b := b;
+         inc(index);
+      end;
+      close(datei);
+
+      loadPalette := 0;
+   end
+   else
+      loadPalette := -1;
+end;
+
+{--------------------------------------------------------------------------}
+
+function loadPal(name: string): integer;
+var e: integer;
+begin
+   e := loadPalette(name);
+   setPalIndex(255, 63, 63, 63); { need white! }
+   loadPal := e;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure savePalette(name: string);
+var
+   dat: text;
+   i  : byte;
+
+begin
+   assign(dat, name);
+   rewrite(dat);
+   for i := 0 to 255 do
+      if i=0 then
+         writeln(dat, palette[i].r:4, palette[i].g:4, palette[i].b:4, '    Map edited with QUILTS V1.1')
+      else
+         writeln(dat, palette[i].r:4, palette[i].g:4, palette[i].b:4);
+   close(dat);
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure refreshPalette;
+var i: byte;
+begin
+   for i := 0 to 254 do
+{      setPalIndex(i, palette[i].r div 4,
+                       palette[i].g div 4,
+                       palette[i].b div 4);}
+      setPalIndex(i, palette[i].r div 4,
+                     palette[i].g div 4,
+                     palette[i].b div 4);
+   setPalIndex(255, 63, 63, 63); { need white! }
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure drawPalette;
+var
+   x, y, size, ystart : integer;
+begin
+   size := nstartx div 16;
+   ystart := npixely-nstartx;
+   for x := 0 to 15 do
+      for y := 0 to 15 do begin
+         setFillStyle(SolidFill, x*16+y);
+         bar(x*size, ystart+y*size, x*size+size-1, ystart+y*size+size-1);
+      end;
+end;
+
+{--------------------------------------------------------------------------}
+
+function readNum(x, y: integer; escValue: extended) : extended;
+var
+   key   : char;
+   i, xp : integer;
+   entry : string;
+   num   : extended;
+
+   procedure drawCursor(x, y: integer);
+   begin
+      setFillStyle(SolidFill, 255);
+      bar(x, y, x+6, y+7);
+   end;
+
+   procedure removeCursor(x, y: integer);
+   begin
+      setFillStyle(SolidFill, 0);
+      bar(x, y, x+6, y+7);
+   end;
+
+begin
+   xp := x;
+   i := 0;
+   entry := '';
+   setFillStyle(SolidFill, 0);
+   bar(x,y,x+64,y+8);
+   repeat
+      drawCursor(xp, y);
+      repeat
+         key := readkey;
+      until key in ['0'..'9', '-', '.', ',', #13, #8, #27];
+      if (key in ['0'..'9', '-', '.', ',']) and (i<7) then begin
+         inc(i);
+         entry := entry+key;
+         removeCursor(xp, y);
+         outtextxy(xp, y, key);
+         inc(xp, 8);
+      end
+      else if (key=#8) and (i>0) then begin
+         dec(i);
+         removeCursor(xp, y);
+         dec(xp, 8);
+         entry := copy(entry, 1, length(entry)-1);
+      end;
+   until key in [#13, #27];
+   removeCursor(xp, y);
+   if key=#13 then begin
+      i := pos(',', entry);
+      if i>0 then entry[i] := '.';
+      val(entry, num, i);
+   end
+   else begin
+      num := escValue;
+   end;
+   readNum := num;
+end;
+
+{--------------------------------------------------------------------------}
+
+function readString(x, y: integer; escValue: string) : string;
+var
+   key   : char;
+   i, xp : integer;
+   entry : string;
+   res   : string;
+
+   procedure drawCursor(x, y: integer);
+   begin
+      setFillStyle(SolidFill, 255);
+      bar(x, y, x+6, y+7);
+   end;
+
+   procedure removeCursor(x, y: integer);
+   begin
+      setFillStyle(SolidFill, 0);
+      bar(x, y, x+6, y+7);
+   end;
+
+begin
+   xp := x;
+   i := 0;
+   entry := '';
+   setFillStyle(SolidFill, 0);
+   bar(x,y,x+64,y+8);
+   repeat
+      drawCursor(xp, y);
+      repeat
+         key := readkey;
+      until key in ['0'..'9', 'A'..'Z', 'a'..'z', '_', #13, #8, #27];
+      if (key in ['0'..'9', 'A'..'Z', 'a'..'z', '_']) and (i<8) then begin
+         inc(i);
+         entry := entry+key;
+         removeCursor(xp, y);
+         outtextxy(xp, y, key);
+         inc(xp, 8);
+      end
+      else if (key=#8) and (i>0) then begin
+         dec(i);
+         removeCursor(xp, y);
+         dec(xp, 8);
+         entry := copy(entry, 1, length(entry)-1);
+      end;
+   until key in [#13, #27];
+   removeCursor(xp, y);
+   if key=#13 then begin
+      res := entry;
+   end
+   else begin
+      res := escValue;
+   end;
+   readString := res;
+end;
+
+{--------------------------------------------------------------------------}
+
+function xpix(x: extended): integer;
+begin
+   xpix := trunc(nstartx + (npixelx-nstartx)*x / nperiod);
+end;
+
+{--------------------------------------------------------------------------}
+
+function ypix(y: extended): integer;
+begin
+   ypix := trunc(npixely - npixely*y / nperiod);
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure iterateQuad;
+var
+   sx, sy      : extended;
+
+begin
+   inc(iter);
+   sx := sin(p2*x);
+   sy := sin(p2*y);
+
+   xnew := (lambda+alpha*cos(p2*y))*sx-omega*sy+beta*sin(p4*x)+gamma*sin(p6*x)*cos(p4*y)+ma*x+shift;
+   ynew := (lambda+alpha*cos(p2*x))*sy+omega*sx+beta*sin(p4*y)+gamma*sin(p6*y)*cos(p4*x)+ma*y+shift;
+
+   if xnew > 1.0 then xnew := xnew - trunc(xnew);
+   if ynew > 1.0 then ynew := ynew - trunc(ynew);
+   if xnew < 0.0 then xnew := xnew + trunc(-xnew)+1;
+   if ynew < 0.0 then ynew := ynew + trunc(-ynew)+1;
+
+   mxnew := trunc(xnew*(npixelx-nstartx)/nperiod);
+   mynew := trunc(ynew*npixely/nperiod);
+
+   inc(mcount[mxnew, mynew]);
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure iterateHex;
+var
+   s11, s12, s13,
+   s21, s22, s23,
+   s31, s32, s33,
+   s3h1, s3h2, s3h3,
+   sx, sy, by, bx    : extended;
+
+begin
+   inc(iter);
+
+   s11 := sin(p2*(e111*x+e112*y));
+   s12 := sin(p2*(e121*x+e122*y));
+   s13 := sin(p2*(e131*x+e132*y));
+   s21 := sin(p2*(em11*x+em12*y));
+   s22 := sin(p2*(em21*x+em22*y));
+   s23 := sin(p2*(em31*x+em32*y));
+   s31 := sin(p2*(en11*x+en12*y));
+   s32 := sin(p2*(en21*x+en22*y));
+   s33 := sin(p2*(en31*x+en32*y));
+   s3h1 := sin(p2*(enh11*x+enh12*y));
+   s3h2 := sin(p2*(enh21*x+enh22*y));
+   s3h3 := sin(p2*(enh31*x+enh32*y));
+
+   sx := e111*s11+e121*s12+e131*s13;
+   sy := e112*s11+e122*s12+e132*s13;
+
+   xnew := a*x-b*y+lambda*sx-omega*sy;
+   ynew := a*y+b*x+lambda*sy+omega*sx;
+
+   xnew := xnew+alpha*(em11*s21+em21*s22+em31*s23);
+   ynew := ynew+alpha*(em12*s21+em22*s22+em32*s23);
+
+   xnew := xnew+a11*s31+a21*s32+a31*s33;
+   ynew := ynew+a12*s31+a22*s32+a32*s33;
+
+   xnew := xnew+ah11*s3h1+ah21*s3h2+ah31*s3h3;
+   ynew := ynew+ah12*s3h1+ah22*s3h2+ah32*s3h3;
+
+   by := 2*ynew/sq3;
+   bx := xnew-by/2;
+
+   if bx > 1.0 then bx := bx - trunc(bx);
+   if by > 1.0 then by := by - trunc(by);
+   if bx < 0.0 then bx := bx + trunc(-bx)+1;
+   if by < 0.0 then by := by + trunc(-by)+1;
+
+   xnew := bx*k11+by*k21;
+   ynew := bx*k12+by*k22;
+
+   mxnew := trunc(bx*(npixelx-nstartx)/nperiod);
+   mynew := trunc(by*npixely/nperiod);
+   inc(mcount[mxnew, mynew]);
+end;
+
+{--------------------------------------------------------------------------}
+
+{$F+}
+function DetectVGA256 : Integer;
+begin
+  DetectVGA256 := 2;
+end;
+{$F-}
+
+{--------------------------------------------------------------------------}
+
+procedure initColorArray;
+var i, j : integer;
+begin
+   for i := 0 to 160 do
+      for j := 0 to 160 do
+         mcount[i,j] := 0;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure setVectors;
+begin
+   a11 := beta;
+   a12 := gamma;
+   a21 := (-a11-sq3*a12)/2;
+   a22 := (sq3*a11-a12)/2;
+   a31 := -a11-a21;
+   a32 := -a12-a22;
+
+   ah11 := a11;
+   ah12 := -a12;
+   ah21 := (-ah11-sq3*ah12)/2;
+   ah22 := (sq3*ah11-ah12)/2;
+   ah31 := -ah11-ah21;
+   ah32 := -ah12-ah22;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure defaultQuad;
+begin
+   lambda := -0.11;
+   alpha := -0.26;
+   beta := 0.19;
+   gamma := -0.059;
+   omega := 0.07;
+   shift := 0.5;
+   ma := 2.0;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure defaultHex;
+begin
+   lambda := 0.02;
+   alpha := -0.1;
+   beta := 0.14;
+   gamma := 0.052;
+   omega := 0.0;
+   a := 0.5;
+   b := 0.866;
+   shift := 0.0;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure initialize;
+var
+   i, j : integer;
+   help : extended;
+begin
+writeln(bgiDriverPath);
+   initGraph(grDriver, grMode, bgiDriverPath);
+{   initGraph(grDriver, grMode, 'c:\stefan\svgabgi');}
+{writeln(GraphErrorMsg(GraphResult));
+readln;}
+   ncolor := GetMaxColor;
+   npixelx := GetMaxX;
+   npixely := GetMaxY;
+   nstartx := npixelx-npixely;
+   help := (npixely+1) / 160;
+   if frac(help) > 0 then
+      minperiod := trunc(help)+1
+   else
+      minperiod := trunc(help);
+
+   nperiod := minperiod;
+
+   p2 := 2*Pi;
+   p4 := 2*p2;
+   p6 := 3*p2;
+   sq3 := sqrt(3);
+
+   x := 0.1;
+   y := 0.3;
+   xnew := x;
+   ynew := y;
+
+   if quadQuilt then
+      defaultQuad
+   else
+      defaultHex;
+
+   { für HexQuilts: }
+   k11 := 1;              k12 := 0;
+   k21 := 0.5;            k22 := sq3/2;
+
+   e111 := 1;             e112 := -1/sq3;
+   e121 := 0;             e122 := 2/sq3;
+   e131 := -(e111+e121);  e132 := -(e112+e122);
+
+   em11 := 2*e111+e121;   em12 := 2*e112+e122;
+   em21 := 2*e121+e131;   em22 := 2*e122+e132;
+   em31 := 2*e131+e111;   em32 := 2*e132+e112;
+
+   en11 := 3*e111+2*e121; en12 := 3*e112+2*e122;
+   en21 := 3*e121+2*e131; en22 := 3*e122+2*e132;
+   en31 := 3*e131+2*e111; en32 := 3*e132+2*e112;
+
+   enh11 := 3*e111+e121;  enh12 := 3*e112+e122;
+   enh21 := 3*e121+e131;  enh22 := 3*e122+e132;
+   enh31 := 3*e131+e111;  enh32 := 3*e132+e112;
+
+   setVectors;
+
+   initColorArray;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure drawMenu;
+var
+   s1,s2 : string;
+begin
+   setColor(255);
+
+   { Trennlinie zwischen Menu und Bild: }
+   line(nstartx-1, 0, nstartx-1, npixely-1);
+
+   outtextxy(0,  0, 'Quilts V1.1 (3/96)');
+   outtextxy(0, 10, 'by Stefan Wolfrum,');
+   outtextxy(0, 20, 'wolfrum@cs.bonn.edu');
+   line(0, 30, nstartx-1, 30);
+
+   { Linie über Palette: }
+   line(0, npixely-nstartx-1, nstartx-1, npixely-nstartx-1);
+
+   str(GetMaxX+1, s1);
+   s2 := s1+'x';
+   str(GetMaxY+1, s1);
+   s2 := s2+s1;
+{   str(GetMaxColor+1, s1);}
+   outTextXY(0, 34, '[F1-4]:Mode='+s2);
+
+   setFillStyle(SolidFill, 0);
+   bar(0, 49, nstartx-2, npixely-nstartx-2);
+   str(lambda:7:4, s1);
+   outtextxy(0, 50, '[l]ambda = '+s1);
+   str(alpha:7:4, s1);
+   outtextxy(0, 60, '[a]lpha  = '+s1);
+   str(beta:7:4, s1);
+   outtextxy(0, 70, '[b]eta   = '+s1);
+   str(gamma:7:4, s1);
+   outtextxy(0, 80, '[g]amma  = '+s1);
+   str(omega:7:4, s1);
+   outtextxy(0, 90, '[o]mega  = '+s1);
+   str(shift:7:4, s1);
+   outtextxy(0,100, 's[h]ift  = '+s1);
+   if quadQuilt then begin
+      str(ma:7:4, s1);
+      outtextxy(0,110, '[m]      = '+s1);
+   end
+   else begin
+      str(a:7:4, s1);
+      outtextxy(0,110, 'm[1]     = '+s1);
+      str(b:7:4, s1);
+      outtextxy(0,120, 'm[2]     = '+s1);
+   end;
+
+   str(minperiod, s1);
+   outtextxy(0,140, 'minperiod: '+s1);
+   str(nperiod, s1);
+   outtextxy(0,150, '[n]period= '+s1);
+
+   str(iter, s1);
+   outtextxy(0,160, '[i]ter.: '+s1);
+
+   outtextxy(0,180, '[s]: save params');
+   outtextxy(0,190, '[e]: get  params');
+   outtextxy(0,200, '[r]: restart');
+   outtextxy(0,210, '[ ]: run/stop');
+   if run then
+      s1 := 'running...'
+   else
+      s1 := 'stopped.';
+   outtextxy(40, 218, s1);
+
+   if quadQuilt then begin
+      outtextxy(0,232,'[f]: fastMode');
+      if fastMode then
+         s1 := 'on'
+      else
+         s1 := 'off';
+      outtextxy(40,242,s1);
+   end;
+
+   outtextxy(0,254,'[t]: type');
+   if quadQuilt then
+      s1 := 'now quad'
+   else
+      s1 := 'now hex';
+   outtextxy(40,262,s1);
+
+   outtextxy(0,274,'[w]: write TGA');
+
+   line(0, npixely-nstartx-26, nstartx-1, npixely-nstartx-26);
+{   outtextxy(0, npixely-nstartx-22, '[P]alette: '+copy(palName, 1, pos('.',palName)-1));}
+   outtextxy(0, npixely-nstartx-22, '[P]alette: '+palName);
+   outtextxy(0, npixely-nstartx-12, 'Edit [c]olors...');
+end;
+
+{--------------------------------------------------------------------------}
+
+function color(count: word): word;
+begin
+   if count <= 254 then
+      color := count
+   else
+      color := 254;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure plotpointsQuad;
+var
+   i, j : integer;
+   mc   : word;
+
+begin
+   if not fastMode then begin
+      for i := 0 to nperiod-1 do
+         for j := 0 to nperiod-1 do begin
+            mc := mcount[mxnew, mynew];
+            if mc>=lowBorder then
+               putpixel(xpix(x+i), ypix(y+j), color(mc));
+         end;
+   end
+   else begin
+      mc := mcount[mxnew, mynew];
+      if mc>=lowBorder then
+         putpixel(xpix(x), ypix(y), color(mc));
+   end;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure plotpointsHex;
+var
+   i, j, xx : integer;
+   mc       : word;
+
+begin
+{   if not fastMode then begin}
+      for i := trunc(-nperiod/2)-1 to nperiod do
+{      for i := trunc(-nperiod/2)-1 to trunc(nperiod/2)+1 do}
+         for j := 0 to nperiod+1 do begin
+{         for j := 0 to nperiod do begin}
+            xx := xpix(x+i*k11+j*k21);
+{            if (xx>=nstartx) and (xx<=npixelx) then begin}
+            if xx>=nstartx then begin
+               mc := mcount[mxnew, mynew];
+               if mc>=lowBorder then
+                  putpixel(xx, ypix(y+i*k12+j*k22), color(mc));
+            end;
+         end;
+{   end
+   else begin
+      i := trunc(-nperiod/2)-1;
+      xx := xpix(x+i*k11);
+      if xx>=nstartx then begin
+         mc := mcount[mxnew, mynew];
+         putpixel(xx, ypix(y+i*k12), color(mc));
+      end;
+   end;}
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure saveParams(name: string);
+var datei: text;
+begin
+   assign(datei, name);
+   rewrite(datei);
+   if quadQuilt then
+      writeln(datei,'quadQuilt')
+   else
+      writeln(datei,'hexQuilt');
+   writeln(datei, lambda);
+   writeln(datei, alpha);
+   writeln(datei, beta);
+   writeln(datei, gamma);
+   writeln(datei, omega);
+   writeln(datei, shift);
+   if quadQuilt then
+      writeln(datei, ma)
+   else begin
+      writeln(datei, a);
+      writeln(datei, b);
+   end;
+   close(datei);
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure loadParams(name: string);
+var
+   datei: text;
+   zeile: string;
+begin
+   {$I-}
+   assign(datei, name);
+   reset(datei);
+   {$I+}
+   if IOResult=0 then begin
+      readln(datei, zeile);
+      if zeile='quadQuilt' then
+         quadQuilt := True
+      else
+         quadQuilt := False;
+      readln(datei, lambda);
+      readln(datei, alpha);
+      readln(datei, beta);
+      readln(datei, gamma);
+      readln(datei, omega);
+      readln(datei, shift);
+      if quadQuilt then
+         readln(datei, ma)
+      else begin
+         readln(datei, a);
+         readln(datei, b);
+      end;
+      close(datei);
+   end;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure bubbleSort(var names: pEntry);
+
+   function p(index: word) : pEntry;
+   var
+      h1 : pEntry;
+      i  : word;
+   begin
+      i := 1;
+      h1 := names;
+      while i<index do begin
+         h1 := h1^.next;
+         inc(i);
+      end;
+      p := h1;
+   end;
+
+var
+   help : string12;
+   n    : word;
+   p1   : pEntry;
+begin
+   { count number of entries (n) in 'names': }
+   p1 := names;
+   n := 0;
+   while p1<>NIL do begin
+      inc(n);
+      p1 := p1^.next;
+   end;
+
+   { bubble sort }
+   for i := 1 to n-1 do
+      for j := i to n do
+         if p(i)^.name > p(j)^.name then begin
+            help := p(i)^.name;
+            p(i)^.name := p(j)^.name;
+            p(j)^.name := help;
+         end;
+end;
+
+{--------------------------------------------------------------------------}
+
+function chooseBox(x1, y1: integer; var names: pEntry; special: boolean): string12;
+var
+   imgSize1, imgSize2 : word;
+   imgP1, imgP2       : pointer;
+   x2,y2              : integer;
+   y, li, ai          : integer;
+   key1, key2         : char;
+   p1                 : pEntry;
+   noe                : word;
+
+
+   procedure invert(l: integer);
+   var
+      p              : pointer;
+      s              : word;
+      xl1,yl1,xl2,yl2: integer;
+   begin
+      xl1 := x1+2;
+      yl1 := y1+(l-1)*9+2;
+      xl2 := x2-2;
+      yl2 := yl1+8;
+      s := ImageSize(xl1, yl1, xl2, yl2);
+      GetMem(p,s);
+      GetImage(xl1, yl1, xl2, yl2, p^);
+
+      { I thought these next two lines wouldn't be necessary...}
+      setfillstyle(solidfill,255);
+      bar(xl1,yl1,xl2,yl2);
+
+      PutImage(xl1, yl1, p^, NotPut);
+      FreeMem(p,s);
+   end;
+
+
+   procedure moveUp;
+   begin
+      imgSize2 := ImageSize(x1+2,y1+2+9,x2-2,y2-2);
+      GetMem(imgP2, imgSize2);
+      GetImage(x1+2,y1+2+9,x2-2,y2-2, imgP2^);
+      PutImage(x1+2,y1+2  , imgP2^, NormalPut);
+      FreeMem(imgP2, imgSize2);
+   end;
+
+
+   procedure moveDown;
+   begin
+      imgSize2 := ImageSize(x1+2,y1+2,x2-2,y2-2-9);
+      GetMem(imgP2, imgSize2);
+      GetImage(x1+2,y1+2,x2-2,y2-2-9, imgP2^);
+      PutImage(x1+2,y1+2+9, imgP2^, NormalPut);
+      FreeMem(imgP2, imgSize2);
+   end;
+
+begin
+{
+   x1 := 0;
+   y1 := npixely-nstartx-120;
+   x2 := nstartx-2;
+   y2 := npixely-nstartx-20;
+}
+   x2 := x1+102;
+   y2 := y1+111;
+   imgSize1 := ImageSize(x1, y1, x2, y2);
+   GetMem(imgP1, imgSize1);
+   GetImage(x1, y1, x2, y2, imgP1^);
+
+   setFillStyle(solidFill, 0);
+   bar(x1,y1,x2,y2);
+
+   setcolor(255);
+   rectangle(x1+1,y1+1,x2-1,y2-1);
+
+   p1 := names;
+   y := y1+3;
+   li := 1;
+   while (p1<>NIL) and (li<=12) do begin
+      outtextxy(x1+3,y,p1^.name);
+      inc(y,9);
+      inc(li);
+      p1 := p1^.next;
+   end;
+
+   { count number of entries (noe) in 'names': }
+   p1 := names;
+   noe := 0;
+   while p1<>NIL do begin
+      inc(noe);
+      p1 := p1^.next;
+   end;
+
+   p1 := names;
+   li := 1;  { listbox index }
+   ai := li; { actual index  }
+
+   repeat
+      invert(li);
+      if special then
+         loadPal(palPfad+p1^.name);
+      key2 := #0;
+      repeat
+         key1 := readkey;
+         if key1=#0 then key2 := readkey;
+      until (key1 in [#13,#27]) or (key2 in [cUP,cDN]);
+
+      if key2 in [cUP,cDN] then begin
+         invert(li);
+         case key2 of
+            cDN: begin
+                    if li<12 then begin
+                       inc(li);
+                       inc(ai);
+                       p1 := p1^.next;
+                    end
+                    else
+                       if (li=12) and (ai<noe) then begin
+                          moveUp;
+                          inc(ai);
+                          p1 := p1^.next;
+                          setfillstyle(solidfill, 0);
+                          bar(x1+3,y1+3+11*9,x2-3,y1+3+12*9-2);
+                          outtextxy(x1+3,y1+3+11*9,p1^.name);
+                       end;
+                 end;
+
+            cUP: begin
+                   if li>1 then begin
+                      dec(li);
+                      dec(ai);
+                      p1 := p1^.prev;
+                   end
+                   else
+                      if (li=1) and (ai>1) then begin
+                         moveDown;
+                         dec(ai);
+                         p1 := p1^.prev;
+                         setfillstyle(solidfill, 0);
+                         bar(x1+3,y1+3,x2-3,y1+3+1*9-2);
+                         outtextxy(x1+3,y1+3,p1^.name);
+                      end;
+                 end;
+         end;
+      end;
+
+   until key1 in [#13,#27];
+
+   putImage(x1,y1,imgP1^, NormalPut);
+   FreeMem(imgP1, imgSize1);
+
+   if key1=#27 then
+      chooseBox := ''
+   else
+      chooseBox := p1^.name;
+end;
+
+{--------------------------------------------------------------------------}
+
+procedure colorEdit;
+type
+   tComp = (red, green, blue);
+
+var
+   ind            : byte;
+   size, ystart   : integer;
+   key1, key2     : char;
+   comp           : tComp;
+   r,g,b          : byte;
+   r1,g1,b1       : byte;
+   r2,g2,b2       : byte;
+   s1             : string[3];
+   marked         : boolean;
+   markedInd      : byte;
+   startInd,
+   endInd, i      : byte;
+   dr, dg, db     : extended;
+   oldPal, merkPal: tPalette;
+   fname,oldName  : string;
+   blackIndex     : byte;
+   palNames,p1,p2 : pEntry;
+   DirInfo        : SearchRec;
+   lastName       : string12;
+
+   {---------------------------------------------------}
+   function xFI(index: byte) : integer; { x from index }
+   begin
+      xFI := size*(index div 16);
+   end;
+
+   function yFI(index: byte): integer;  { y from index }
+   begin
+      yFI := ystart+size*(index mod 16);
+   end;
+
+   procedure drawRec(index: byte);
+   var
+      x,y: integer;
+      av : extended;
+   begin
+      av := (palette[index].r+palette[index].g+palette[index].b)/3;
+      if av < 148 then
+         setcolor(255)
+      else
+         setcolor(0);
+      x := xFI(index);
+      y := yFI(index);
+      rectangle(x, y, x+size-1, y+size-1);
+   end;
+
+   procedure removeRec(index: byte);
+   var x,y: integer;
+   begin
+      setcolor(index);
+      x := xFI(index);
+      y := yFI(index);
+      rectangle(x, y, x+size-1, y+size-1);
+   end;
+
+   procedure drawMark(index: byte);
+   var
+      x,y: integer;
+      av : extended;
+   begin
+      av := (palette[index].r+palette[index].g+palette[index].b)/3;
+      if av < 148 then
+         setFillStyle(SolidFill,255)
+      else
+         setFillStyle(SolidFill,0);
+      x := xFI(index)+(size div 2);
+      y := yFI(index)+(size div 2);
+      bar(x-2, y-2, x+1, y+1);
+   end;
+
+   procedure removeMark(index: byte);
+   var x,y: integer;
+   begin
+      setFillStyle(SolidFill,index);
+      x := xFI(index)+(size div 2);
+      y := yFI(index)+(size div 2);
+      bar(x-2, y-2, x+1, y+1);
+   end;
+   {---------------------------------------------------}
+
+begin
+   oldPal := palette;
+   size := nstartx div 16;
+   ystart := npixely-nstartx;
+   setFillStyle(SolidFill, 0);
+   bar(0, 50, nstartx-2, ystart-30);
+   ind := 0;
+   marked := False;
+   comp := red;
+   r := palette[ind].r div 4;
+   g := palette[ind].g div 4;
+   b := palette[ind].b div 4;
+
+   str(ind:3, s1);
+   outtextxy(0,ystart-95,'index: '+s1);
+   str(r:3, s1);
+   outtextxy(0,ystart-80,'red  = '+s1);
+   str(g:3, s1);
+   outtextxy(0,ystart-70,'green= '+s1);
+   str(b:3, s1);
+   outtextxy(0,ystart-60,'blue = '+s1);
+   case comp of
+      red  : outtextxy(0,ystart-46,'modifying red');
+      green: outtextxy(0,ystart-46,'modifying green');
+      blue : outtextxy(0,ystart-46,'modifying blue ');
+   end;
+
+   outtextxy(0,ystart-270,'['#24#25#27#26']: sel. color');
+   outtextxy(0,ystart-260,'[r]: choose red');
+   outtextxy(0,ystart-250,'[g]: choose green');
+   outtextxy(0,ystart-240,'[b]: choose blue');
+   outtextxy(0,ystart-230,'[+]: incr. value');
+   outtextxy(0,ystart-220,'[-]: decr. value');
+   outtextxy(0,ystart-210,'[*]: incr. all');
+   outtextxy(0,ystart-200,'[/]: decr. al');
+   outtextxy(0,ystart-190,'[ ]: mark/unmark');
+   outtextxy(0,ystart-180,'[=]: create range');
+   outtextxy(0,ystart-170,'[c]: copy marked');
+   outtextxy(0,ystart-160,'[x]: xchange marked');
+   outtextxy(0,ystart-150,'[l]: load map');
+   outtextxy(0,ystart-140,'[s]: save map');
+   outtextxy(0,ystart-130,'[ESC]: cancel');
+   outtextxy(0,ystart-120,'[RET]: return');
+
+   blackIndex := 0;
+   oldName := palName;
+
+   repeat
+      key2 := #0;
+      drawRec(ind);
+      if marked then drawMark(markedInd);
+      repeat
+         key1 := upcase(readkey);
+         if key1=#0 then key2 := readkey;
+      until (key1 in [#27,#13,'R','G','B','+','-',' ','=',
+                      'C','S','X','*','/','L','>','<','']) or
+            (key2 in [cUP,cDN,cLE,cRI]);
+
+      case key1 of
+         'R': begin
+                 comp := red;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-46, nstartx-2, ystart-30);
+                 setcolor(255);
+                 outtextxy(0,ystart-46,'modifying red');
+              end;
+
+         'G': begin
+                 comp := green;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-46, nstartx-2, ystart-30);
+                 setcolor(255);
+                 outtextxy(0,ystart-46,'modifying green');
+              end;
+
+         'B': begin
+                 comp := blue;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-46, nstartx-2, ystart-30);
+                 setcolor(255);
+                 outtextxy(0,ystart-46,'modifying blue');
+              end;
+
+         '+': begin
+                 case comp of
+                    red:   begin
+                              if r<63 then inc(r);
+                              palette[ind].r := r*4;
+                              setFillStyle(SolidFill, 0);
+                              bar(0, ystart-80, nstartx-2, ystart-72);
+                              str(r:3, s1);
+                              setcolor(255);
+                              outtextxy(0,ystart-80,'red  = '+s1);
+                           end;
+                    green: begin
+                              if g<63 then inc(g);
+                              palette[ind].g := g*4;
+                              setFillStyle(SolidFill, 0);
+                              bar(0, ystart-70, nstartx-2, ystart-62);
+                              str(g:3, s1);
+                              setcolor(255);
+                              outtextxy(0,ystart-70,'green= '+s1);
+                           end;
+                    blue:  begin
+                              if b<63 then inc(b);
+                              palette[ind].b := b*4;
+                              setFillStyle(SolidFill, 0);
+                              bar(0, ystart-60, nstartx-2, ystart-52);
+                              str(b:3, s1);
+                              setcolor(255);
+                              outtextxy(0,ystart-60,'blue = '+s1);
+                           end;
+                 end;
+                 setPalIndex(ind, r, g, b);
+              end;
+
+         '-': begin
+                 case comp of
+                    red:   begin
+                              if r>0 then dec(r);
+                              palette[ind].r := r*4;
+                              setFillStyle(SolidFill, 0);
+                              bar(0, ystart-80, nstartx-2, ystart-72);
+                              str(r:3, s1);
+                              setcolor(255);
+                              outtextxy(0,ystart-80,'red  = '+s1);
+                           end;
+                    green: begin
+                              if g>0 then dec(g);
+                              palette[ind].g := g*4;
+                              setFillStyle(SolidFill, 0);
+                              bar(0, ystart-70, nstartx-2, ystart-62);
+                              str(g:3, s1);
+                              setcolor(255);
+                              outtextxy(0,ystart-70,'green= '+s1);
+                           end;
+                    blue:  begin
+                              if b>0 then dec(b);
+                              palette[ind].b := b*4;
+                              setFillStyle(SolidFill, 0);
+                              bar(0, ystart-60, nstartx-2, ystart-52);
+                              str(b:3, s1);
+                              setcolor(255);
+                              outtextxy(0,ystart-60,'blue = '+s1);
+                           end;
+                 end;
+                 setPalIndex(ind, r, g, b);
+              end;
+
+         ' ': begin
+                 if not marked then begin
+                    drawMark(ind);
+                    markedInd := ind;
+                    marked := True;
+                 end
+                 else begin
+                    removeMark(markedInd);
+                    marked := False;
+                 end;
+              end;
+
+         '=': if marked then begin
+                 startInd := min(ind, markedInd);
+                 endInd := max(ind, markedInd);
+                 if endInd-startInd>=3 then begin
+                    r1 := palette[startInd].r;
+                    g1 := palette[startInd].g;
+                    b1 := palette[startInd].b;
+                    r2 := palette[endInd].r;
+                    g2 := palette[endInd].g;
+                    b2 := palette[endInd].b;
+                    dr := (r2-r1) / (endInd-startInd+1);
+                    dg := (g2-g1) / (endInd-startInd+1);
+                    db := (b2-b1) / (endInd-startInd+1);
+                    for i := startInd+1 to endInd-1 do begin
+                       palette[i].r := palette[startInd].r+trunc((i-startInd)*dr);
+                       palette[i].g := palette[startInd].g+trunc((i-startInd)*dg);
+                       palette[i].b := palette[startInd].b+trunc((i-startInd)*db);
+                       setPalIndex(i, palette[i].r div 4,
+                                        palette[i].g div 4,
+                                        palette[i].b div 4);
+                    end;
+                 end;
+              end;
+
+         'C': if marked then begin
+                 palette[ind].r := palette[markedInd].r;
+                 palette[ind].g := palette[markedInd].g;
+                 palette[ind].b := palette[markedInd].b;
+                 setPalIndex(ind, palette[ind].r div 4,
+                                    palette[ind].g div 4,
+                                    palette[ind].b div 4);
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-100, nstartx-2, ystart-48);
+                 setcolor(255);
+                 str(ind:3, s1);
+                 outtextxy(0,ystart-95,'index: '+s1);
+                 str(r:3, s1);
+                 outtextxy(0,ystart-80,'red  = '+s1);
+                 str(g:3, s1);
+                 outtextxy(0,ystart-70,'green= '+s1);
+                 str(b:3, s1);
+                 outtextxy(0,ystart-60,'blue = '+s1);
+              end;
+
+         'X': if marked then begin
+                 r1 := palette[ind].r;
+                 g1 := palette[ind].g;
+                 b1 := palette[ind].b;
+                 palette[ind].r := palette[markedInd].r;
+                 palette[ind].g := palette[markedInd].g;
+                 palette[ind].b := palette[markedInd].b;
+                 palette[markedInd].r := r1;
+                 palette[markedInd].g := g1;
+                 palette[markedInd].b := b1;
+                 setPalIndex(ind, palette[ind].r div 4,
+                                    palette[ind].g div 4,
+                                    palette[ind].b div 4);
+                 setPalIndex(markedInd, palette[markedInd].r div 4,
+                                    palette[markedInd].g div 4,
+                                    palette[markedInd].b div 4);
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-100, nstartx-2, ystart-48);
+                 setcolor(255);
+                 str(ind:3, s1);
+                 outtextxy(0,ystart-95,'index: '+s1);
+                 str(r:3, s1);
+                 outtextxy(0,ystart-80,'red  = '+s1);
+                 str(g:3, s1);
+                 outtextxy(0,ystart-70,'green= '+s1);
+                 str(b:3, s1);
+                 outtextxy(0,ystart-60,'blue = '+s1);
+              end;
+
+         'S': begin
+                 setcolor(255);
+                 fname := readString(80, ystart-140, '!!!!!!!!.MAP');
+                 if fname<>'!!!!!!!!.MAP' then
+                    savePalette(palPfad+fname+'.MAP');
+                 setFillStyle(SolidFill, 0);
+                 bar(80,ystart-140,nstartx-2,ystart-132);
+                 setColor(255);
+                 outtextxy(0,ystart-140,'[s]: save map');
+              end;
+
+         '*': if (r<63) and (g<63) and (b<63) then begin
+                 inc(r);
+                 palette[ind].r := r*4;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-80, nstartx-2, ystart-72);
+                 str(r:3, s1);
+                 setcolor(255);
+                 outtextxy(0,ystart-80,'red  = '+s1);
+
+                 inc(g);
+                 palette[ind].g := g*4;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-70, nstartx-2, ystart-62);
+                 str(g:3, s1);
+                 setcolor(255);
+                 outtextxy(0,ystart-70,'green= '+s1);
+
+                 inc(b);
+                 palette[ind].b := b*4;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-60, nstartx-2, ystart-52);
+                 str(b:3, s1);
+                 setcolor(255);
+                 outtextxy(0,ystart-60,'blue = '+s1);
+
+                 setPalIndex(ind, r, g, b);
+              end;
+
+         '/': if (r>0) and (g>0) and (b>0) then begin
+                 dec(r);
+                 palette[ind].r := r*4;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-80, nstartx-2, ystart-72);
+                 str(r:3, s1);
+                 setcolor(255);
+                 outtextxy(0,ystart-80,'red  = '+s1);
+
+                 dec(g);
+                 palette[ind].g := g*4;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-70, nstartx-2, ystart-62);
+                 str(g:3, s1);
+                 setcolor(255);
+                 outtextxy(0,ystart-70,'green= '+s1);
+
+                 dec(b);
+                 palette[ind].b := b*4;
+                 setFillStyle(SolidFill, 0);
+                 bar(0, ystart-60, nstartx-2, ystart-52);
+                 str(b:3, s1);
+                 setcolor(255);
+                 outtextxy(0,ystart-60,'blue = '+s1);
+
+                 setPalIndex(ind, r, g, b);
+              end;
+
+         '': begin
+                 setcolor(255);
+                 fname := readString(80, ystart-150, '!!!!!!!!.MAP');
+                 if fname<>'!!!!!!!!.MAP' then
+                    if loadPal(palPfad+fname+'.MAP')=0 then palName := fname;
+                 setFillStyle(SolidFill, 0);
+                 bar(80,ystart-150,nstartx-2,ystart-142);
+                 setColor(255);
+                 outtextxy(0,ystart-150,'[l]: load map');
+              end;
+
+         'L': begin
+                 FindFirst(palPfad+'\*.MAP', Archive, DirInfo);
+                 new(palNames);
+                 palNames^.name := DirInfo.Name;
+                 palNames^.next := NIL;
+                 palNames^.prev := NIL;
+                 p1 := palNames;
+                 lastName := '';
+                 while DosError = 0 do begin
+                    FindNext(DirInfo);
+                    if DirInfo.name<>lastName then begin
+                       new(p2);
+                       p2^.Name := DirInfo.Name;
+                       p2^.next := NIL;
+                       p1^.next := p2;
+                       p2^.prev := p1;
+                       p1 := p2;
+                       lastName := DirInfo.Name;
+                    end;
+                 end;
+
+                 bubbleSort(palNames);
+{
+closegraph;
+p1 := palNames;
+while p1<>NIL do begin
+   writeln(p1^.name);
+   p1 := p1^.next;
+   readln;
+end;
+halt(1);
+}
+                 merkPal := palette;
+                 fname := chooseBox(10, npixely-nstartx-124, palNames, True);
+
+                 { clean up: }
+                 p1 := palNames;
+                 p2 := p1^.next;
+                 while p2<>NIL do begin
+                    dispose(p1);
+                    p1 := p2;
+                    p2 := p2^.next;
+                 end;
+
+                 oldName := palName;
+                 if fname<>'' then begin
+                    loadPal(palPfad+fname);
+                    palName := copy(fname,1,pos('.',fname)-1);
+                 end
+                 else begin
+                    palette := merkPal;
+                    refreshPalette;
+                 end;
+              end;
+
+         '>': begin
+                 if blackIndex<253 then begin
+                    inc(blackIndex);
+                    for i := 1 to blackIndex do
+                       setPalIndex(i,0,0,0);
+                 end;
+              end;
+
+         '<': begin
+                 if blackIndex>0 then begin
+                    setPalIndex(blackIndex, palette[blackIndex].r div 4,
+                                            palette[blackIndex].g div 4,
+                                            palette[blackIndex].b div 4);
+                    dec(blackIndex);
+                 end;
+              end;
+      end;
+
+      if key2<>#0 then begin
+         removeRec(ind);
+         case key2 of
+            cUP: if ind>0 then dec(ind);
+            cDN: if ind<254 then inc(ind);
+            cLE: if (ind div 16)>0 then dec(ind,16);
+            cRI: if ((ind div 16)<15) and (ind<>239) then inc(ind,16);
+         end;
+         r := palette[ind].r div 4;
+         g := palette[ind].g div 4;
+         b := palette[ind].b div 4;
+
+         setFillStyle(SolidFill, 0);
+         bar(0, ystart-100, nstartx-2, ystart-48);
+         setcolor(255);
+         str(ind:3, s1);
+         outtextxy(0,ystart-95,'index: '+s1);
+         str(r:3, s1);
+         outtextxy(0,ystart-80,'red  = '+s1);
+         str(g:3, s1);
+         outtextxy(0,ystart-70,'green= '+s1);
+         str(b:3, s1);
+         outtextxy(0,ystart-60,'blue = '+s1);
+      end;
+   until key1 in [#27,#13];
+   removeRec(ind);
+   if marked then removeMark(markedInd);
+   if key1=#27 then begin
+      palette := oldPal;
+      refreshPalette;
+      palName  := oldName;
+   end;
+end;
+
+(**************************************************************************)
+
+begin
+   loadIniFile;
+   grDriver := InstallUserDriver('SVGA256', nil);
+   if GraphResult<>grOK then begin
+      writeln(GraphErrorMsg(GraphResult));
+      halt(1);
+   end;
+   grMode := SVGA640x480x256;
+{   grMode := SVGA1024x768x256;}
+
+   quadQuilt := False;
+   initialize;
+
+   palName := 'volcano3';
+   drawPalette;
+   run := True;
+   fastMode := False;
+   drawMenu;
+   err := loadPal(palPfad+palName+'.MAP');
+   key := #0;
+   keyx := #0;
+   iter := 0;
+   lowBorder := 0;
+   repeat
+      if run then begin
+         if quadQuilt then
+            iterateQuad
+         else
+            iterateHex;
+         x := xnew;
+         y := ynew;
+         if quadQuilt then
+            plotpointsQuad
+         else
+            plotPointsHex;
+      end;
+      if keypressed then begin
+          key := upcase(readkey);
+          if key=#0 then keyx := readkey;
+      end;
+
+      { special keys: }
+      if keyx in [cF1,cF2,cF3,cF4] then begin
+         closeGraph;
+         case keyx of
+            cF1: grMode := SVGA640x480x256;
+            cF2: grMode := SVGA800x600x256;
+            cF3: grMode := SVGA1024x768x256;
+            cF4: grMode := SVGA1280x1024x256;
+         end;
+         initGraph(grDriver, grMode, bgiDriverPath);
+
+         ncolor := GetMaxColor;
+         npixelx := GetMaxX;
+         npixely := GetMaxY;
+         nstartx := npixelx-npixely;
+         help := (npixely+1) / 160;
+         if frac(help) > 0 then
+            minperiod := trunc(help)+1
+         else
+            minperiod := trunc(help);
+
+         nperiod := minperiod;
+
+         p2 := 2*Pi;
+         p4 := 2*p2;
+         p6 := 3*p2;
+         x := 0.1;
+         y := 0.334;
+         xnew := x;
+         ynew := y;
+         initColorArray;
+         drawPalette;
+         drawMenu;
+         refreshPalette;
+         key := #0;
+         iter := 0;
+         keyx := #0;
+      end;
+
+      if key<>#0 then
+      case key of
+         'L': { lambda }
+              begin
+                 merk := lambda;
+                 lambda := readNum(88, 50, lambda);
+                 if lambda<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'A': { alpha }
+              begin
+                 merk := alpha;
+                 alpha := readNum(88, 60, alpha);
+                 if alpha<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'B': { beta }
+              begin
+                 merk := beta;
+                 beta := readNum(88, 70, beta);
+                 if beta<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                    if not quadQuilt then setVectors;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'G': { gamma }
+              begin
+                 merk := gamma;
+                 gamma := readNum(88, 80, gamma);
+                 if gamma<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                    if not quadQuilt then setVectors;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'O': { omega }
+              begin
+                 merk := omega;
+                 omega := readNum(88, 90, omega);
+                 if omega<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'H': { shift }
+              begin
+                 merk := shift;
+                 shift := readNum(88,100, shift);
+                 if shift<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'M': { ma }
+              begin
+                 merk := ma;
+                 ma := readNum(88,110, ma);
+                 if ma<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         '1': { a }
+              begin
+                 merk := a;
+                 a := readNum(88,110, a);
+                 if a<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         '2': { b }
+              begin
+                 merk := b;
+                 b := readNum(88,120, b);
+                 if b<>merk then begin
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'N': { nperiod }
+              begin
+                 merk2 := nperiod;
+                 nperiod := trunc(readNum(88,150, nperiod));
+                 if (nperiod<>merk2) then begin
+                    if nperiod<minperiod then nperiod := minperiod;
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.334;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'I': { Iterationsanzeige auffrischen }
+              begin
+                 drawMenu;
+                 key := #0;
+              end;
+
+         '': { CTRL-P: Palette laden durch Namen eintippen }
+              begin
+                 merk3 := palName;
+                 palName := readString(88, npixely-nstartx-22, palName);
+                 if (merk3<>palName) then
+                    err := loadPal(palPfad+palName+'.MAP');
+                    if err < 0 then palName := merk3;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'P': { P: Palette komfortabel laden (mit ChooseBox) }
+              begin
+                 FindFirst(palPfad+'\*.MAP', Archive, DirInfo);
+                 new(palNames);
+                 palNames^.name := DirInfo.Name;
+                 palNames^.next := NIL;
+                 palNames^.prev := NIL;
+                 ep1 := palNames;
+                 lastName := '';
+                 while DosError = 0 do begin
+                    FindNext(DirInfo);
+                    if DirInfo.name<>lastName then begin
+                       new(ep2);
+                       ep2^.Name := DirInfo.Name;
+                       ep2^.next := NIL;
+                       ep1^.next := ep2;
+                       ep2^.prev := ep1;
+                       ep1 := ep2;
+                       lastName := DirInfo.Name;
+                    end;
+                 end;
+
+                 bubbleSort(palNames);
+
+                 merkPal := palette;
+                 merk3 := chooseBox(50, npixely-nstartx-124, palNames, True);
+
+                 { clean up: }
+                 ep1 := palNames;
+                 ep2 := ep1^.next;
+                 while ep2<>NIL do begin
+                    dispose(ep1);
+                    ep1 := ep2;
+                    ep2 := ep2^.next;
+                 end;
+
+                 if merk3<>'' then begin
+                    loadPal(palPfad+merk3);
+                    palName := copy(merk3,1,pos('.',merk3)-1);
+                    drawMenu;
+                 end
+                 else begin
+                    palette := merkPal;
+                    refreshPalette;
+                 end;
+                 key := #0;
+              end;
+
+
+         'R': { restart }
+              begin
+                 setFillStyle(SolidFill, 0);
+                 bar(nstartx, 0, npixelx, npixely);
+                 x := 0.1;
+                 y := 0.334;
+                 xnew := x;
+                 ynew := y;
+                 iter := 0;
+                 initColorArray;
+                 drawMenu;
+                 run := true;
+                 key := #0;
+              end;
+
+         ' ': { toggle run/stop }
+              begin
+                 run := not run;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'F': { toggle fastMode }
+              if quadQuilt then
+                 begin
+                    fastMode := not fastMode;
+                    if not fastMode then begin
+                       x1 := nstartx;
+                       w := ypix(0.0)-ypix(1.0);
+                       y1 := npixely-w;
+                       x2 := x1+w;
+                       y2 := y1+w-1;
+{
+setcolor(15);
+line(0,y1,npixelx,y1);
+line(x1,0,x1,npixely);
+line(0,y2,npixelx,y2);
+line(x2,0,x2,npixely);
+dummy := readkey;
+}
+                       imgSize := ImageSize(x1, y1, x2, y2);
+{
+closegraph;
+writeln('nstartx=',nstartx);
+writeln('npixely=',npixely);
+writeln('nperiod=',nperiod);
+writeln('(npixely+1) div nperiod=',(npixely+1) div nperiod);
+writeln('x1=',x1);
+writeln('y1=',y1);
+writeln('w =',w);
+writeln('x2=',x2);
+writeln('y2=',y2);
+halt(1);
+}
+                       GetMem(P, imgSize);
+                       GetImage(x1, y1, x2, y2, P^);
+{closegraph;}
+                       while x1<npixelx do begin
+                          y1 := npixely-w;
+                          while y1>-8 do begin
+                             putImage(x1,y1,P^, NormalPut);
+{writeln(x1,',',y1);
+dummy := readkey;}
+                             dec(y1,w-1);
+                          end;
+                          inc(x1,w-1);
+                       end;
+{halt(1);}
+
+{
+                    for i := 0 to nperiod-1 do
+                       for j := nperiod-1 downto 0 do begin
+                          PutImage(nstartx+i*w, j*w, P^, NormalPut);
+                          dummy := readkey;
+                       end;
+}
+                       FreeMem(P, imgSize);
+                    end;
+
+                    drawMenu;
+                    key := #0;
+                 end;
+
+         'S': { save params }
+              begin
+                 merk3 := readString(80, 180, '!!!!!!!!')+'.QUP';
+                 if merk3<>'!!!!!!!!.QUP' then begin
+                    saveParams(merk3);
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         '': { CTRL-E: get (load) params }
+              begin
+                 merk3 := readString(80, 190, '!!!!!!!!')+'.QUP';
+                 if merk3<>'!!!!!!!!.QUP' then begin
+                    loadParams(merk3);
+                    if not quadQuilt then setVectors;
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.3;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'E': { load parameter via choosebox }
+                 FindFirst('*.QUP', Archive, DirInfo);
+                 new(parNames);
+                 parNames^.name := DirInfo.Name;
+                 parNames^.next := NIL;
+                 parNames^.prev := NIL;
+                 ep1 := parNames;
+                 lastName := '';
+                 while DosError = 0 do begin
+                    FindNext(DirInfo);
+                    if DirInfo.name<>lastName then begin
+                       new(ep2);
+                       ep2^.Name := DirInfo.Name;
+                       ep2^.next := NIL;
+                       ep1^.next := ep2;
+                       ep2^.prev := ep1;
+                       ep1 := ep2;
+                       lastName := DirInfo.Name;
+                    end;
+                 end;
+
+                 bubbleSort(parNames);
+
+                 merk3 := chooseBox(50, npixely-nstartx-124, parNames, False);
+
+                 { clean up: }
+                 ep1 := parNames;
+                 ep2 := ep1^.next;
+                 while ep2<>NIL do begin
+                    dispose(ep1);
+                    ep1 := ep2;
+                    ep2 := ep2^.next;
+                 end;
+
+                 if merk3<>'' then begin
+                    loadParams(merk3);
+                    if not quadQuilt then setVectors;
+                    setFillStyle(SolidFill, 0);
+                    bar(nstartx, 0, npixelx, npixely);
+                    x := 0.1;
+                    y := 0.3;
+                    xnew := x;
+                    ynew := y;
+                    iter := 0;
+                    initColorArray;
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+
+         'T': { toggle between quad/hex quilts }
+              begin
+                 quadQuilt := not quadQuilt;
+                 if quadQuilt then
+                    defaultQuad
+                 else
+                    defaultHex;
+                 setFillStyle(SolidFill, 0);
+                 bar(nstartx, 0, npixelx, npixely);
+                 x := 0.1;
+                 y := 0.334;
+                 xnew := x;
+                 ynew := y;
+                 iter := 0;
+                 initColorArray;
+                 drawMenu;
+                 run := true;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'W': { write as Targa bitmap file }
+              begin
+                 merk3 := readString(88, 274, '!!!!!!!!')+'.TGA';
+                 if merk3<>'!!!!!!!!.TGA' then begin
+                    saveTGA(merk3);
+                 end;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         'C': { edit colors... }
+              begin
+                 setfillstyle(solidfill, 0);
+                 bar(0,npixely-nstartx-26,nstartx-2,npixely-nstartx-2);
+                 colorEdit;
+                 drawMenu;
+                 key := #0;
+              end;
+
+         '#': { max/min hits: }
+              begin
+                 maxHit := 0;
+                 minHit := 65535;
+                 for i := 0 to trunc((npixelx-nstartx)/nperiod) do
+                    for j := 0 to trunc((npixelx-nstartx)/nperiod) do begin
+                       if mcount[i,j]>maxHit then maxHit := mcount[i,j];
+                       if mcount[i,j]<minHit then minHit := mcount[i,j];
+                    end;
+                 setFillStyle(SolidFill, 0);
+                 bar(0,170,nstartx-2,178);
+                 setcolor(255);
+                 str(maxHit, merk3);
+                 str(minHit, merk4);
+                 outtextxy(0,170,'max='+merk3+', min='+merk4);
+                 key := #0;
+              end;
+
+         '+': begin
+                 inc(lowBorder);
+                 setFillStyle(SolidFill, 0);
+                 bar(nstartx, 0, npixelx, npixely);
+                 x := 0.1;
+                 y := 0.334;
+                 xnew := x;
+                 ynew := y;
+                 iter := 0;
+                 initColorArray;
+                 drawMenu;
+                 str(lowBorder, merk3);
+                 outtextxy(0,npixely-nstartx-36,'lowBorder='+merk3);
+                 run := true;
+                 key := #0;
+              end;
+
+         '-': if lowBorder>0 then begin
+                 dec(lowBorder);
+                 setFillStyle(SolidFill, 0);
+                 bar(nstartx, 0, npixelx, npixely);
+                 x := 0.1;
+                 y := 0.334;
+                 xnew := x;
+                 ynew := y;
+                 iter := 0;
+                 initColorArray;
+                 drawMenu;
+                 str(lowBorder, merk3);
+                 outtextxy(0,npixely-nstartx-36,'lowBorder='+merk3);
+                 run := true;
+                 key := #0;
+              end;
+
+      end;
+   until key=#27;
+   closeGraph;
+end.

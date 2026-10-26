@@ -1,0 +1,47 @@
+unit Unit2;
+
+interface
+
+uses Windows, SysUtils, Classes, Graphics, Forms, Controls, StdCtrls,
+  Buttons, ComCtrls, ExtCtrls;
+
+type
+  TPagesDlg = class(TForm)
+    Panel1: TPanel;
+    Panel2: TPanel;
+    OKBtn: TButton;
+    CancelBtn: TButton;
+    PageControl1: TPageControl;
+    tsQuilts: TTabSheet;
+    GroupBox1: TGroupBox;
+    rbQuad: TRadioButton;
+    rbHex: TRadioButton;
+    Label1: TLabel;
+    GroupBox2: TGroupBox;
+    Label2: TLabel;
+    edAlpha: TEdit;
+    Edit1: TEdit;
+    Label3: TLabel;
+    Edit2: TEdit;
+    Label4: TLabel;
+    Edit3: TEdit;
+    Label5: TLabel;
+    Edit4: TEdit;
+    Label6: TLabel;
+    Edit5: TEdit;
+    Label7: TLabel;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  PagesDlg: TPagesDlg;
+
+implementation
+
+{$R *.DFM}
+
+end.
+

@@ -1,0 +1,54 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  ComCtrls, Menus, ExtCtrls, StdCtrls, Buttons;
+
+type
+  TForm1 = class(TForm)
+    menu: TMainMenu;
+    mnFile: TMenuItem;
+    mnFileExit: TMenuItem;
+    mnOpt: TMenuItem;
+    mnOptParam: TMenuItem;
+    mnOptParamImg: TMenuItem;
+    mnOptParamMath: TMenuItem;
+    mnInfo: TMenuItem;
+    mnInfoAbout: TMenuItem;
+    status: TStatusBar;
+    btGo: TBitBtn;
+    paint: TPaintBox;
+    procedure FormResize(Sender: TObject);
+    procedure paintPaint(Sender: TObject);
+  private
+    { Private-Deklarationen }
+  public
+    { Public-Deklarationen }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.DFM}
+
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+   paint.Top := 42;
+   paint.Height := Height-104;
+   paint.Width := Width-6;
+   status.Top := Height-65;
+end;
+
+procedure TForm1.paintPaint(Sender: TObject);
+begin
+   paint.Canvas.Rectangle (0, 0, paint.Width, paint.Height);
+   paint.Canvas.MoveTo (0, 0);
+   paint.Canvas.LineTo (paint.Width-1, paint.Height-1);
+end;
+
+end.
