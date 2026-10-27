@@ -1,0 +1,13 @@
+[package]
+name = "quilts-ffi"
+version = "2.0.0"
+edition = "2021"
+description = "Zero-copy C-ABI bridge of quilts-core for Swift (macOS, iPadOS, iOS)"
+license = "MIT"
+
+[lib]
+name = "quilts_ffi"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+quilts-core = { path = "../quilts-core" }

@@ -1,0 +1,13 @@
+[package]
+name = "quilts-core"
+version = "2.0.0"
+edition = "2021"
+authors = ["Stefan Wolfrum"]
+description = "High-performance IFS / Symmetric Chaos Quilt compute kernel (Scalar, SIMD, ARM64 NEON Assembly, Multi-Core)"
+license = "MIT"
+
+[lib]
+name = "quilts_core"
+crate-type = ["rlib"]
+
+[dependencies]

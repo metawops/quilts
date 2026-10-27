@@ -1,0 +1,11 @@
+# Rust build artifacts
+/target/
+
+# Swift / Xcode build artifacts
+.build/
+apple/QuiltsNative/.build/
+apple/QuiltsNative/.swiftpm/
+*.xcuserdata
+
+# macOS system files
+.DS_Store

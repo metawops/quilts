@@ -1,0 +1,13 @@
+[package]
+name = "quilts-wasm"
+version = "2.0.0"
+edition = "2021"
+description = "WebAssembly SIMD128 & Zero-Copy Canvas wrapper for quilts-core"
+license = "MIT"
+
+[lib]
+name = "quilts_wasm"
+crate-type = ["cdylib"]
+
+[dependencies]
+quilts-core = { path = "../quilts-core" }
