@@ -134,7 +134,7 @@ impl QuiltParams {
         };
         match self.quilt_type {
             QuiltType::Quad => format!(
-                "{}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n",
+                "{}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n",
                 header,
                 self.lambda,
                 self.alpha,
@@ -145,7 +145,7 @@ impl QuiltParams {
                 self.ma
             ),
             QuiltType::Hex => format!(
-                "{}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n{: .14E}\n",
+                "{}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n{:.14E}\n",
                 header,
                 self.lambda,
                 self.alpha,

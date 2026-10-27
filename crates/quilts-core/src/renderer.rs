@@ -148,7 +148,7 @@ pub fn render_quilt_widescreen_rgba(
         }
     }
 
-    let scale_Per_pixel = nperiod_y.max(0.25) / (canvas_height.max(1) as f64);
+    let scale_per_pixel = nperiod_y.max(0.25) / (canvas_height.max(1) as f64);
     let scale_t = tile_size as f64;
     let two_over_sq3 = 2.0 / 3.0_f64.sqrt();
 
@@ -174,14 +174,14 @@ pub fn render_quilt_widescreen_rgba(
     };
 
     for py in 0..canvas_height {
-        let y_world = (canvas_height - 1 - py) as f64 * scale_Per_pixel + phase_y;
+        let y_world = (canvas_height - 1 - py) as f64 * scale_per_pixel + phase_y;
         let dst_row_start = py * canvas_width * 4;
 
         match quilt_type {
             QuiltType::Quad => {
                 let v = y_world - y_world.floor();
                 for px in 0..canvas_width {
-                    let x_world = px as f64 * scale_Per_pixel + phase_x;
+                    let x_world = px as f64 * scale_per_pixel + phase_x;
                     let u = x_world - x_world.floor();
                     let rgba = sample_bilinear(u, v);
                     let offset = dst_row_start + px * 4;
@@ -193,7 +193,7 @@ pub fn render_quilt_widescreen_rgba(
                 let half_by = 0.5 * by_raw;
                 let by = by_raw - by_raw.floor();
                 for px in 0..canvas_width {
-                    let x_world = px as f64 * scale_Per_pixel + phase_x;
+                    let x_world = px as f64 * scale_per_pixel + phase_x;
                     let bx_raw = x_world - half_by;
                     let bx = bx_raw - bx_raw.floor();
                     let rgba = sample_bilinear(bx, by);

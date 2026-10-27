@@ -444,6 +444,26 @@ const state = {
 const workerPool = new WorkerPool();
 
 // Optional Rust WebAssembly binary loader (if compiled to web/quilts_wasm.wasm)
+function syncRustWasmParams() {
+  if (!state.wasmInstance || !state.wasmCtx) return;
+  const p = state.params;
+  state.wasmInstance.wasm_quilt_reset(state.wasmCtx, state.tileSize);
+  state.wasmInstance.wasm_quilt_set_backend(state.wasmCtx, 2); // Simd4xMultiOrbit (Wasm SIMD128)
+  state.wasmInstance.wasm_quilt_set_params(
+    state.wasmCtx,
+    p.type === "quad" ? 0 : 1,
+    Number(p.lambda ?? 0),
+    Number(p.alpha ?? 0),
+    Number(p.beta ?? 0),
+    Number(p.gamma ?? 0),
+    Number(p.omega ?? 0),
+    Number(p.shift ?? 0),
+    Number(p.ma ?? 1),
+    Number(p.a ?? 0.5),
+    Number(p.b ?? 0.866)
+  );
+}
+
 async function tryLoadRustWasm() {
   try {
     const resp = await fetch("quilts_wasm.wasm");
@@ -456,6 +476,7 @@ async function tryLoadRustWasm() {
       state.canvasSize,
       state.canvasSize
     );
+    syncRustWasmParams();
     return true;
   } catch (_) {
     return false;
@@ -584,6 +605,7 @@ function resetSimulation() {
   state.orbit.x = 0.1;
   state.orbit.y = 0.334;
   state.hexA = computeHexA(state.params.beta, state.params.gamma);
+  syncRustWasmParams();
   renderFrame();
 }
 
@@ -618,8 +640,19 @@ async function simulationTick() {
       }
     } else if (state.engine === "scalar1996") {
       stepScalar1996(state.params, state.hexA, state.orbit, state.histogram, state.tileSize, count);
+    } else if (state.engine === "wasm" && state.wasmInstance && state.wasmCtx) {
+      state.wasmInstance.wasm_quilt_step(state.wasmCtx, count);
+      const ptr = state.wasmInstance.wasm_quilt_histogram_ptr(state.wasmCtx);
+      if (ptr) {
+        const wasmHist = new Uint32Array(
+          state.wasmInstance.memory.buffer,
+          ptr,
+          state.tileSize * state.tileSize
+        );
+        state.histogram.set(wasmHist);
+      }
     } else {
-      // Both "fast" and fallback "wasm" use the branchless Chebyshev kernel
+      // "fast" (and fallback if quilts_wasm.wasm is not built yet) uses the branchless Chebyshev kernel
       stepFastChebyshev(
         state.params,
         state.hexA,
@@ -1068,7 +1101,23 @@ function initBenchmarkArena() {
     stepFastChebyshev(state.params, state.hexA, orbit, dummyHist, state.tileSize, totalIters);
     let dt2 = (performance.now() - t0) / 1000.0;
     const m2 = totalIters / 1e6 / dt2;
-    results.push({ name: "2. Branchless + Chebyshev Fast-Trig (1 Kern)", miter: m2, ms: dt2 * 1000 });
+    results.push({ name: "2. Branchless + Chebyshev Fast-Trig (JS, 1 Kern)", miter: m2, ms: dt2 * 1000 });
+
+    // 2b. Rust / WebAssembly (if loaded)
+    if (state.wasmInstance && state.wasmCtx) {
+      await new Promise((r) => setTimeout(r, 30));
+      syncRustWasmParams();
+      t0 = performance.now();
+      state.wasmInstance.wasm_quilt_step(state.wasmCtx, totalIters);
+      let dtWasm = (performance.now() - t0) / 1000.0;
+      const mWasm = totalIters / 1e6 / dtWasm;
+      results.push({
+        name: "3. Rust / WebAssembly (wasm32 SIMD128, 1 Kern)",
+        miter: mWasm,
+        ms: dtWasm * 1000,
+      });
+      syncRustWasmParams();
+    }
 
     // 3. Multi-Core Web Worker Pool
     await new Promise((r) => setTimeout(r, 30));
@@ -1077,7 +1126,7 @@ function initBenchmarkArena() {
     let dt3 = (performance.now() - t0) / 1000.0;
     const m3 = totalIters / 1e6 / dt3;
     results.push({
-      name: `3. Multi-Core Web Worker Pool (${workerPool.numWorkers} Threads parallel)`,
+      name: `${state.wasmInstance ? "4" : "3"}. Multi-Core Web Worker Pool (${workerPool.numWorkers} Threads parallel)`,
       miter: m3,
       ms: dt3 * 1000,
     });
@@ -1194,24 +1243,58 @@ function buildMatchedTileIndices(hist, tSize, referenceLiveHist = null) {
   }
 
   // Exact CDF / Quantile Matching against `referenceLiveHist`:
-  // 1. Compute the exact palette index distribution of the live canvas
-  const refIndices = computeRawIndices(referenceLiveHist);
-  const refSorted = new Uint8Array(refIndices);
-  refSorted.sort();
-  const refLen = refSorted.length;
-
-  // 2. Rank-order the cells of `hist` and assign each quantile the exact palette index from `refSorted`
-  const order = new Uint32Array(totalCells);
-  for (let i = 0; i < totalCells; i++) order[i] = i;
-  order.sort((a, b) => hist[a] - hist[b]);
-
+  // 1. Separate hit cells from background cells: background (0 / < lowB) ALWAYS stays 0!
   const matched = new Uint8Array(totalCells);
-  const scaleRank = (refLen - 1) / Math.max(1, totalCells - 1);
-  for (let rank = 0; rank < totalCells; rank++) {
-    const cellIdx = order[rank];
-    const refPos = (rank * scaleRank) | 0;
-    matched[cellIdx] = refSorted[refPos];
+
+  // Extract non-zero palette indices from reference
+  const refIndices = computeRawIndices(referenceLiveHist);
+  const refLen = refIndices.length;
+  let refHitCount = 0;
+  for (let i = 0; i < refLen; i++) {
+    if (refIndices[i] > 0) refHitCount++;
   }
+
+  if (refHitCount === 0) {
+    return matched; // all black
+  }
+
+  const refHitSorted = new Uint8Array(refHitCount);
+  let rPtr = 0;
+  for (let i = 0; i < refLen; i++) {
+    if (refIndices[i] > 0) {
+      refHitSorted[rPtr++] = refIndices[i];
+    }
+  }
+  refHitSorted.sort();
+
+  // Find all hit cells in `hist`
+  const threshold = Math.max(1, lowB);
+  let histHitCount = 0;
+  for (let i = 0; i < totalCells; i++) {
+    if (hist[i] >= threshold) histHitCount++;
+  }
+
+  if (histHitCount === 0) {
+    return matched; // all black
+  }
+
+  const hitOrder = new Uint32Array(histHitCount);
+  let hPtr = 0;
+  for (let i = 0; i < totalCells; i++) {
+    if (hist[i] >= threshold) {
+      hitOrder[hPtr++] = i;
+    }
+  }
+  hitOrder.sort((a, b) => hist[a] - hist[b]);
+
+  // Quantile-match ONLY the hit cells
+  const scaleRank = (refHitCount - 1) / Math.max(1, histHitCount - 1);
+  for (let rank = 0; rank < histHitCount; rank++) {
+    const cellIdx = hitOrder[rank];
+    const refPos = (rank * scaleRank) | 0;
+    matched[cellIdx] = refHitSorted[refPos];
+  }
+
   return matched;
 }
 

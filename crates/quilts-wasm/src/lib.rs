@@ -114,6 +114,20 @@ pub unsafe extern "C" fn wasm_quilt_step(ctx: *mut WasmContext, iterations: u32)
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn wasm_quilt_reset(ctx: *mut WasmContext, tile_size: usize) {
+    let Some(c) = ctx.as_mut() else { return };
+    c.sim.resize_tile(tile_size);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wasm_quilt_histogram_ptr(ctx: *const WasmContext) -> *const u32 {
+    let Some(c) = ctx.as_ref() else {
+        return std::ptr::null();
+    };
+    c.sim.histogram.as_ptr()
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn wasm_quilt_render(ctx: *mut WasmContext) -> *const u8 {
     let Some(c) = ctx.as_mut() else {
         return std::ptr::null();

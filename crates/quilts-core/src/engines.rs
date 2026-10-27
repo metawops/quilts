@@ -748,154 +748,57 @@ unsafe fn run_arm64_asm_quad_kernel(
     let vshf: float32x4_t = vdupq_n_f32(params.shift as f32);
     let vma: float32x4_t = vdupq_n_f32(params.ma as f32);
 
-    let vhalf: float32x4_t = vdupq_n_f32(0.5);
-    let vqtr: float32x4_t = vdupq_n_f32(0.25);
-    let v3qtr: float32x4_t = vdupq_n_f32(0.75);
-    let vfour: float32x4_t = vdupq_n_f32(4.0);
-    let vneg8: float32x4_t = vdupq_n_f32(-8.0);
-    let vkp: float32x4_t = vdupq_n_f32(0.225);
     let vtwo: float32x4_t = vdupq_n_f32(2.0);
     let vone: float32x4_t = vdupq_n_f32(1.0);
     let vscale: float32x4_t = vdupq_n_f32(tile_size as f32);
     let max_idx = (tile_size.saturating_sub(1)) as u32;
 
     for _ in 0..steps {
+        let (sx1, cx1) = neon_sin_cos_2pi_f32x4(vx);
+        let (sy1, cy1) = neon_sin_cos_2pi_f32x4(vy);
+
+        let sx2 = vmulq_f32(vtwo, vmulq_f32(sx1, cx1));
+        let cx2 = vsubq_f32(vmulq_f32(vtwo, vmulq_f32(cx1, cx1)), vone);
+        let sy2 = vmulq_f32(vtwo, vmulq_f32(sy1, cy1));
+        let cy2 = vsubq_f32(vmulq_f32(vtwo, vmulq_f32(cy1, cy1)), vone);
+
+        let sx3 = vmulq_f32(sx1, vaddq_f32(vmulq_f32(vtwo, cx2), vone));
+        let sy3 = vmulq_f32(sy1, vaddq_f32(vmulq_f32(vtwo, cy2), vone));
+
+        let mut xnew = vfmaq_f32(vshf, vma, vx);
+        xnew = vfmaq_f32(xnew, vfmaq_f32(vlam, valp, cy1), sx1);
+        xnew = vfmsq_f32(xnew, vomg, sy1);
+        xnew = vfmaq_f32(xnew, vbet, sx2);
+        xnew = vfmaq_f32(xnew, vgam, vmulq_f32(sx3, cy2));
+
+        let mut ynew = vfmaq_f32(vshf, vma, vy);
+        ynew = vfmaq_f32(ynew, vfmaq_f32(vlam, valp, cx1), sy1);
+        ynew = vfmaq_f32(ynew, vomg, sx1);
+        ynew = vfmaq_f32(ynew, vbet, sy2);
+        ynew = vfmaq_f32(ynew, vgam, vmulq_f32(sy3, cx2));
+
         let mut ix_out: uint32x4_t;
         let mut iy_out: uint32x4_t;
 
+        // Hand-written ARM64 Assembly for the 1-cycle FRINTM modulo & FCVTZS quantization:
         core::arch::asm!(
-            // --- 1. Compute sin(2*pi*x) in v16, cos(2*pi*x) in v17 ---
-            "fadd v16.4s, {vx}.4s, {vhalf}.4s",
-            "frintm v16.4s, v16.4s",
-            "fsub v16.4s, {vx}.4s, v16.4s",           // w = x - floor(x + 0.5)
-            "fabs v18.4s, v16.4s",                    // |w|
-            "fmul v19.4s, v16.4s, {vfour}.4s",        // 4*w
-            "fmul v20.4s, v16.4s, {vneg8}.4s",        // -8*w
-            "fmla v19.4s, v20.4s, v18.4s",            // y = 4*w - 8*w*|w|
-            "fabs v18.4s, v19.4s",                    // |y|
-            "fmul v18.4s, v19.4s, v18.4s",            // y * |y|
-            "fsub v18.4s, v18.4s, v19.4s",            // y*|y| - y
-            "mov v16.16b, v19.16b",
-            "fmla v16.4s, v18.4s, {vkp}.4s",          // sx1 = sin(2*pi*x)
+            "frintm {tmp1:v}.4s, {x:v}.4s",
+            "fsub {x:v}.4s, {x:v}.4s, {tmp1:v}.4s",
+            "frintm {tmp2:v}.4s, {y:v}.4s",
+            "fsub {y:v}.4s, {y:v}.4s, {tmp2:v}.4s",
 
-            "fadd v17.4s, {vx}.4s, {v3qtr}.4s",
-            "frintm v17.4s, v17.4s",
-            "fadd v18.4s, {vx}.4s, {vqtr}.4s",
-            "fsub v17.4s, v18.4s, v17.4s",            // wc = (x + 0.25) - floor(x + 0.75)
-            "fabs v18.4s, v17.4s",
-            "fmul v19.4s, v17.4s, {vfour}.4s",
-            "fmul v20.4s, v17.4s, {vneg8}.4s",
-            "fmla v19.4s, v20.4s, v18.4s",
-            "fabs v18.4s, v19.4s",
-            "fmul v18.4s, v19.4s, v18.4s",
-            "fsub v18.4s, v18.4s, v19.4s",
-            "mov v17.16b, v19.16b",
-            "fmla v17.4s, v18.4s, {vkp}.4s",          // cx1 = cos(2*pi*x)
+            "fmul {tmp1:v}.4s, {x:v}.4s, {scale:v}.4s",
+            "fcvtzs {ix:v}.4s, {tmp1:v}.4s",
+            "fmul {tmp2:v}.4s, {y:v}.4s, {scale:v}.4s",
+            "fcvtzs {iy:v}.4s, {tmp2:v}.4s",
 
-            // --- 2. Compute sin(2*pi*y) in v20, cos(2*pi*y) in v21 ---
-            "fadd v20.4s, {vy}.4s, {vhalf}.4s",
-            "frintm v20.4s, v20.4s",
-            "fsub v20.4s, {vy}.4s, v20.4s",
-            "fabs v18.4s, v20.4s",
-            "fmul v19.4s, v20.4s, {vfour}.4s",
-            "fmul v22.4s, v20.4s, {vneg8}.4s",
-            "fmla v19.4s, v22.4s, v18.4s",
-            "fabs v18.4s, v19.4s",
-            "fmul v18.4s, v19.4s, v18.4s",
-            "fsub v18.4s, v18.4s, v19.4s",
-            "mov v20.16b, v19.16b",
-            "fmla v20.4s, v18.4s, {vkp}.4s",          // sy1 = sin(2*pi*y)
-
-            "fadd v21.4s, {vy}.4s, {v3qtr}.4s",
-            "frintm v21.4s, v21.4s",
-            "fadd v18.4s, {vy}.4s, {vqtr}.4s",
-            "fsub v21.4s, v18.4s, v21.4s",
-            "fabs v18.4s, v21.4s",
-            "fmul v19.4s, v21.4s, {vfour}.4s",
-            "fmul v22.4s, v21.4s, {vneg8}.4s",
-            "fmla v19.4s, v22.4s, v18.4s",
-            "fabs v18.4s, v19.4s",
-            "fmul v18.4s, v19.4s, v18.4s",
-            "fsub v18.4s, v18.4s, v19.4s",
-            "mov v21.16b, v19.16b",
-            "fmla v21.4s, v18.4s, {vkp}.4s",          // cy1 = cos(2*pi*y)
-
-            // --- 3. Double & Triple Harmonics via Chebyshev ---
-            "fmul v22.4s, v16.4s, v17.4s",
-            "fmul v22.4s, v22.4s, {vtwo}.4s",         // sx2 = 2*sx1*cx1
-            "fmul v23.4s, v17.4s, v17.4s",
-            "fmul v23.4s, v23.4s, {vtwo}.4s",
-            "fsub v23.4s, v23.4s, {vone}.4s",         // cx2 = 2*cx1^2 - 1
-
-            "fmul v24.4s, v20.4s, v21.4s",
-            "fmul v24.4s, v24.4s, {vtwo}.4s",         // sy2 = 2*sy1*cy1
-            "fmul v25.4s, v21.4s, v21.4s",
-            "fmul v25.4s, v25.4s, {vtwo}.4s",
-            "fsub v25.4s, v25.4s, {vone}.4s",         // cy2 = 2*cy1^2 - 1
-
-            "fmul v18.4s, v23.4s, {vtwo}.4s",
-            "fadd v18.4s, v18.4s, {vone}.4s",
-            "fmul v18.4s, v16.4s, v18.4s",            // sx3 = sx1 * (2*cx2 + 1)
-
-            "fmul v19.4s, v25.4s, {vtwo}.4s",
-            "fadd v19.4s, v19.4s, {vone}.4s",
-            "fmul v19.4s, v20.4s, v19.4s",            // sy3 = sy1 * (2*cy2 + 1)
-
-            // --- 4. Assemble xnew and ynew with FMA ---
-            "mov v26.16b, {vlam}.16b",
-            "fmla v26.4s, {valp}.4s, v21.4s",         // lambda + alpha*cy1
-            "mov v27.16b, {vshf}.16b",
-            "fmla v27.4s, {vma}.4s, {vx}.4s",         // shift + ma*x
-            "fmla v27.4s, v26.4s, v16.4s",            // + (lambda + alpha*cy1)*sx1
-            "fmls v27.4s, {vomg}.4s, v20.4s",         // - omega*sy1
-            "fmla v27.4s, {vbet}.4s, v22.4s",         // + beta*sx2
-            "fmul v18.4s, v18.4s, v25.4s",            // sx3 * cy2
-            "fmla v27.4s, {vgam}.4s, v18.4s",         // + gamma*sx3*cy2
-
-            "mov v26.16b, {vlam}.16b",
-            "fmla v26.4s, {valp}.4s, v17.4s",         // lambda + alpha*cx1
-            "mov v28.16b, {vshf}.16b",
-            "fmla v28.4s, {vma}.4s, {vy}.4s",         // shift + ma*y
-            "fmla v28.4s, v26.4s, v20.4s",            // + (lambda + alpha*cx1)*sy1
-            "fmla v28.4s, {vomg}.4s, v16.4s",         // + omega*sx1
-            "fmla v28.4s, {vbet}.4s, v24.4s",         // + beta*sy2
-            "fmul v19.4s, v19.4s, v23.4s",            // sy3 * cx2
-            "fmla v28.4s, {vgam}.4s, v19.4s",         // + gamma*sy3*cx2
-
-            // --- 5. Branchless Modulo 1 via FRINTM & Pixel Quantization ---
-            "frintm v18.4s, v27.4s",
-            "fsub {vx}.4s, v27.4s, v18.4s",
-            "frintm v19.4s, v28.4s",
-            "fsub {vy}.4s, v28.4s, v19.4s",
-
-            "fmul v18.4s, {vx}.4s, {vscale}.4s",
-            "fcvtzs {ix}.4s, v18.4s",
-            "fmul v19.4s, {vy}.4s, {vscale}.4s",
-            "fcvtzs {iy}.4s, v19.4s",
-
-            vx = inout(vreg) vx,
-            vy = inout(vreg) vy,
+            x = inout(vreg) xnew => vx,
+            y = inout(vreg) ynew => vy,
+            scale = in(vreg) vscale,
             ix = out(vreg) ix_out,
             iy = out(vreg) iy_out,
-            vlam = in(vreg) vlam,
-            valp = in(vreg) valp,
-            vbet = in(vreg) vbet,
-            vgam = in(vreg) vgam,
-            vomg = in(vreg) vomg,
-            vshf = in(vreg) vshf,
-            vma = in(vreg) vma,
-            vhalf = in(vreg) vhalf,
-            vqtr = in(vreg) vqtr,
-            v3qtr = in(vreg) v3qtr,
-            vfour = in(vreg) vfour,
-            vneg8 = in(vreg) vneg8,
-            vkp = in(vreg) vkp,
-            vtwo = in(vreg) vtwo,
-            vone = in(vreg) vone,
-            vscale = in(vreg) vscale,
-            out("v16") _, out("v17") _, out("v18") _, out("v19") _,
-            out("v20") _, out("v21") _, out("v22") _, out("v23") _,
-            out("v24") _, out("v25") _, out("v26") _, out("v27") _, out("v28") _,
+            tmp1 = out(vreg) _,
+            tmp2 = out(vreg) _,
             options(nostack, nomem)
         );
 
