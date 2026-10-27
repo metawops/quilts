@@ -675,3 +675,90 @@ dialog::backdrop {
   gap: 0.45rem;
   margin-top: 0.25rem;
 }
+
+/* 5K / Dual-5K Wallpaper Studio Modal */
+#dialogWallpaper {
+  width: min(880px, 95vw);
+}
+
+.wp-studio-body {
+  gap: 1.1rem;
+}
+
+.wp-preview-box {
+  background-color: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wp-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.wp-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000000;
+  border-radius: 6px;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+}
+
+#wpPreviewCanvas {
+  max-width: 100%;
+  max-height: 220px;
+  width: auto;
+  height: auto;
+  border-radius: 3px;
+}
+
+.wp-controls-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 720px) {
+  .wp-controls-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wp-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.wp-progress-area {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wp-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.wp-footer {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+

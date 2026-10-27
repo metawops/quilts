@@ -414,7 +414,7 @@ const state = {
   running: true,
   engine: "workers",
   batchSize: 500000,
-  tileSize: 384,
+  tileSize: 768,
   canvasSize: 768,
   nperiod: 3,
   toneMapping: "log",
@@ -429,7 +429,7 @@ const state = {
     QUILTS_CATALOG.palettes.find((p) => p.id === "VOLCANO3") || QUILTS_CATALOG.palettes[0]
   ),
   previewPalette: null,
-  histogram: new Uint32Array(384 * 384),
+  histogram: new Uint32Array(768 * 768),
   totalIterations: 0,
   maxHit: 0,
   minHit: 0,
@@ -1103,6 +1103,515 @@ function initBenchmarkArena() {
   });
 }
 
+// --- 12b. 5K / Dual-5K Ultra-HD Wallpaper Studio ---
+const WALLPAPER_PRESETS = {
+  dual5k_split: {
+    label: "Dual 5K Split (2× 5120×2880 px nahtlos für Monitor Links & Rechts)",
+    totalW: 10240,
+    totalH: 2880,
+    splitDual: true,
+  },
+  "5k": {
+    label: "Single 5K Studio Display (5120×2880 px · 16:9)",
+    totalW: 5120,
+    totalH: 2880,
+    splitDual: false,
+  },
+  dual5k_single: {
+    label: "Dual 5K Panorama in 1 Datei (10240×2880 px · 32:9)",
+    totalW: 10240,
+    totalH: 2880,
+    splitDual: false,
+  },
+  "6k": {
+    label: "Apple 6K Pro Display XDR (6016×3384 px · 16:9)",
+    totalW: 6016,
+    totalH: 3384,
+    splitDual: false,
+  },
+  "4k": {
+    label: "4K UHD Monitor (3840×2160 px · 16:9)",
+    totalW: 3840,
+    totalH: 2160,
+    splitDual: false,
+  },
+  ipad13: {
+    label: "iPad Pro 13\" M4 (2752×2064 px · 4:3)",
+    totalW: 2752,
+    totalH: 2064,
+    splitDual: false,
+  },
+  square4k: {
+    label: "Quadratischer Kunstdruck (4096×4096 px · 1:1)",
+    totalW: 4096,
+    totalH: 4096,
+    splitDual: false,
+  },
+};
+
+/**
+ * Builds an exact palette-index tile [0..254] from a histogram.
+ * When `referenceLiveHist` is provided, performs exact Percentile / Quantile (CDF) Histogram Matching
+ * so that a newly computed high-res histogram has the EXACT same color distribution as the user's live canvas!
+ */
+function buildMatchedTileIndices(hist, tSize, referenceLiveHist = null) {
+  const totalCells = tSize * tSize;
+  const lowB = state.lowBorder;
+  const mode = state.toneMapping;
+  const invGamma = 1.0 / Math.max(0.1, state.gamma);
+
+  const computeRawIndices = (hArr) => {
+    const len = hArr.length;
+    let maxH = 0;
+    for (let i = 0; i < len; i++) {
+      if (hArr[i] > maxH) maxH = hArr[i];
+    }
+    const logMax = Math.max(1.0, Math.log(Math.max(2, maxH)));
+    const sqrtMax = Math.max(1.0, Math.sqrt(Math.max(2, maxH)));
+    const out = new Uint8Array(len);
+
+    for (let i = 0; i < len; i++) {
+      const mc = hArr[i];
+      if (mc === 0 || mc < lowB) {
+        out[i] = 0;
+      } else if (mode === "classic1996") {
+        out[i] = mc > 254 ? 254 : mc;
+      } else if (mode === "log") {
+        const norm = Math.pow(Math.min(1.0, Math.log(mc) / logMax), invGamma);
+        const idx = 1 + ((norm * 253.0) | 0);
+        out[i] = idx > 254 ? 254 : idx;
+      } else {
+        const norm = Math.pow(Math.min(1.0, Math.sqrt(mc) / sqrtMax), invGamma);
+        const idx = 1 + ((norm * 253.0) | 0);
+        out[i] = idx > 254 ? 254 : idx;
+      }
+    }
+    return out;
+  };
+
+  if (!referenceLiveHist || referenceLiveHist === hist) {
+    return computeRawIndices(hist);
+  }
+
+  // Exact CDF / Quantile Matching against `referenceLiveHist`:
+  // 1. Compute the exact palette index distribution of the live canvas
+  const refIndices = computeRawIndices(referenceLiveHist);
+  const refSorted = new Uint8Array(refIndices);
+  refSorted.sort();
+  const refLen = refSorted.length;
+
+  // 2. Rank-order the cells of `hist` and assign each quantile the exact palette index from `refSorted`
+  const order = new Uint32Array(totalCells);
+  for (let i = 0; i < totalCells; i++) order[i] = i;
+  order.sort((a, b) => hist[a] - hist[b]);
+
+  const matched = new Uint8Array(totalCells);
+  const scaleRank = (refLen - 1) / Math.max(1, totalCells - 1);
+  for (let rank = 0; rank < totalCells; rank++) {
+    const cellIdx = order[rank];
+    const refPos = (rank * scaleRank) | 0;
+    matched[cellIdx] = refSorted[refPos];
+  }
+  return matched;
+}
+
+function renderWidescreenToRgbaU32(
+  hist,
+  tSize,
+  quiltType,
+  outRgbaU32,
+  targetW,
+  targetH,
+  xStartOffsetPx,
+  fullVirtualH,
+  periodY,
+  phaseX,
+  phaseY,
+  useBilinear,
+  referenceLiveHist = null
+) {
+  updateColorLut();
+  const tilePaletteIdx = buildMatchedTileIndices(hist, tSize, referenceLiveHist);
+  const totalCells = tSize * tSize;
+  const tileColorsU32 = new Uint32Array(totalCells);
+  for (let i = 0; i < totalCells; i++) {
+    tileColorsU32[i] = colorLutU32[tilePaletteIdx[i]];
+  }
+
+  const scalePerPixel = Math.max(0.25, periodY) / Math.max(1, fullVirtualH);
+  const twoOverSq3 = 2.0 / SQ3;
+  const isQuad = quiltType === "quad";
+
+  // Smooth subpixel anti-aliasing between the exact pre-mapped RGBA tile pixels
+  const sampleSubpixelRGB = (u, v) => {
+    const fx = u * tSize;
+    const fy = v * tSize;
+    const x0 = Math.floor(fx) % tSize;
+    const y0 = Math.floor(fy) % tSize;
+    const x1 = (x0 + 1) % tSize;
+    const y1 = (y0 + 1) % tSize;
+    const dx = fx - Math.floor(fx);
+    const dy = fy - Math.floor(fy);
+
+    const c00 = tileColorsU32[y0 * tSize + x0];
+    const c10 = tileColorsU32[y0 * tSize + x1];
+    const c01 = tileColorsU32[y1 * tSize + x0];
+    const c11 = tileColorsU32[y1 * tSize + x1];
+
+    const w00 = (1 - dx) * (1 - dy);
+    const w10 = dx * (1 - dy);
+    const w01 = (1 - dx) * dy;
+    const w11 = dx * dy;
+
+    const r =
+      ((c00 & 0xff) * w00 +
+        (c10 & 0xff) * w10 +
+        (c01 & 0xff) * w01 +
+        (c11 & 0xff) * w11) |
+      0;
+    const g =
+      (((c00 >> 8) & 0xff) * w00 +
+        ((c10 >> 8) & 0xff) * w10 +
+        ((c01 >> 8) & 0xff) * w01 +
+        ((c11 >> 8) & 0xff) * w11) |
+      0;
+    const b =
+      (((c00 >> 16) & 0xff) * w00 +
+        ((c10 >> 16) & 0xff) * w10 +
+        ((c01 >> 16) & 0xff) * w01 +
+        ((c11 >> 16) & 0xff) * w11) |
+      0;
+
+    return (255 << 24) | (b << 16) | (g << 8) | r;
+  };
+
+  for (let py = 0; py < targetH; py++) {
+    const yWorld = (fullVirtualH - 1 - py) * scalePerPixel + phaseY;
+    const dstRow = py * targetW;
+
+    if (isQuad) {
+      const v = yWorld - Math.floor(yWorld);
+      const my = Math.min(tSize - 1, (v * tSize) | 0);
+      const rowOff = my * tSize;
+
+      for (let px = 0; px < targetW; px++) {
+        const xWorld = (px + xStartOffsetPx) * scalePerPixel + phaseX;
+        const u = xWorld - Math.floor(xWorld);
+        if (useBilinear) {
+          outRgbaU32[dstRow + px] = sampleSubpixelRGB(u, v);
+        } else {
+          const mx = Math.min(tSize - 1, (u * tSize) | 0);
+          outRgbaU32[dstRow + px] = tileColorsU32[rowOff + mx];
+        }
+      }
+    } else {
+      const byRaw = yWorld * twoOverSq3;
+      const halfBy = 0.5 * byRaw;
+      const by = byRaw - Math.floor(byRaw);
+      const my = Math.min(tSize - 1, (by * tSize) | 0);
+      const rowOff = my * tSize;
+
+      for (let px = 0; px < targetW; px++) {
+        const xWorld = (px + xStartOffsetPx) * scalePerPixel + phaseX;
+        const bxRaw = xWorld - halfBy;
+        const bx = bxRaw - Math.floor(bxRaw);
+        if (useBilinear) {
+          outRgbaU32[dstRow + px] = sampleSubpixelRGB(bx, by);
+        } else {
+          const mx = Math.min(tSize - 1, (bx * tSize) | 0);
+          outRgbaU32[dstRow + px] = tileColorsU32[rowOff + mx];
+        }
+      }
+    }
+  }
+}
+
+function downloadCanvasAsPng(offCanvas, filename) {
+  return new Promise((resolve) => {
+    offCanvas.toBlob((blob) => {
+      if (!blob) {
+        resolve();
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        resolve();
+      }, 400);
+    }, "image/png");
+  });
+}
+
+function initWallpaperStudio() {
+  const dialog = document.getElementById("dialogWallpaper");
+  const prevCanvas = document.getElementById("wpPreviewCanvas");
+  const pctx = prevCanvas.getContext("2d", { alpha: false });
+
+  const selPreset = document.getElementById("wpSelectPresetSize");
+  const selSourceMode = document.getElementById("wpSelectSourceMode");
+  const selTileRes = document.getElementById("wpSelectTileRes");
+  const selIters = document.getElementById("wpSelectIterations");
+  const sliderPeriodY = document.getElementById("wpSliderPeriodY");
+  const sliderPhaseX = document.getElementById("wpSliderPhaseX");
+  const sliderPhaseY = document.getElementById("wpSliderPhaseY");
+  const chkBilinear = document.getElementById("wpChkBilinear");
+
+  const syncSourceControls = () => {
+    const isLive = selSourceMode.value === "live";
+    selTileRes.disabled = isLive;
+    selIters.disabled = isLive;
+  };
+  selSourceMode.addEventListener("change", syncSourceControls);
+  syncSourceControls();
+
+  const updatePreview = () => {
+    const presetKey = selPreset.value;
+    const preset = WALLPAPER_PRESETS[presetKey];
+    const periodY = Number(sliderPeriodY.value);
+    const phaseX = Number(sliderPhaseX.value);
+    const phaseY = Number(sliderPhaseY.value);
+    const useBilinear = chkBilinear.checked;
+
+    document.getElementById("wpOutPeriodY").textContent = periodY.toFixed(2);
+    document.getElementById("wpOutPhaseX").textContent = phaseX.toFixed(2);
+    document.getElementById("wpOutPhaseY").textContent = phaseY.toFixed(2);
+    document.getElementById("wpPreviewLabel").textContent = `Live-Vorschau: ${preset.label}`;
+    document.getElementById("wpAspectBadge").textContent = `${preset.totalW} × ${preset.totalH} px`;
+
+    // Scale preview canvas to exact aspect ratio of target monitor setup
+    const aspect = preset.totalW / preset.totalH;
+    const prevH = 216;
+    const prevW = Math.min(820, Math.round(prevH * aspect));
+    if (prevCanvas.width !== prevW || prevCanvas.height !== prevH) {
+      prevCanvas.width = prevW;
+      prevCanvas.height = prevH;
+    }
+
+    const img = pctx.createImageData(prevW, prevH);
+    const buf32 = new Uint32Array(img.data.buffer);
+    renderWidescreenToRgbaU32(
+      state.histogram,
+      state.tileSize,
+      state.params.type,
+      buf32,
+      prevW,
+      prevH,
+      0,
+      prevH,
+      periodY,
+      phaseX,
+      phaseY,
+      useBilinear
+    );
+    pctx.putImageData(img, 0, 0);
+
+    // Draw subtle center bezel guide line when Dual-5K is selected
+    if (presetKey.startsWith("dual5k")) {
+      const midX = Math.floor(prevW / 2) + 0.5;
+      pctx.save();
+      pctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+      pctx.lineWidth = 1.5;
+      pctx.setLineDash([5, 5]);
+      pctx.beginPath();
+      pctx.moveTo(midX, 0);
+      pctx.lineTo(midX, prevH);
+      pctx.stroke();
+      pctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+      pctx.fillRect(8, 8, 95, 20);
+      pctx.fillRect(midX + 8, 8, 102, 20);
+      pctx.fillStyle = "#ffffff";
+      pctx.font = "600 11px -apple-system, sans-serif";
+      pctx.fillText("◀ 5K LINKS", 14, 22);
+      pctx.fillText("5K RECHTS ▶", midX + 14, 22);
+      pctx.restore();
+    }
+  };
+
+  selPreset.addEventListener("change", updatePreview);
+  sliderPeriodY.addEventListener("input", updatePreview);
+  sliderPhaseX.addEventListener("input", updatePreview);
+  sliderPhaseY.addEventListener("input", updatePreview);
+  chkBilinear.addEventListener("change", updatePreview);
+
+  const openStudio = () => {
+    sliderPeriodY.value = String(Math.min(6, Math.max(1, state.nperiod)));
+    document.getElementById("wpProgressArea").hidden = true;
+    updatePreview();
+    dialog.showModal();
+  };
+
+  document.getElementById("btnOpenWallpaperStudio").addEventListener("click", openStudio);
+  document.getElementById("btnQuickWallpaper").addEventListener("click", openStudio);
+
+  document.getElementById("btnStartWallpaperRender").addEventListener("click", async () => {
+    const btn = document.getElementById("btnStartWallpaperRender");
+    const progArea = document.getElementById("wpProgressArea");
+    const progStatus = document.getElementById("wpProgressStatus");
+    const progPct = document.getElementById("wpProgressPct");
+    const progBar = document.getElementById("wpProgressBar");
+
+    const wasRunning = state.running;
+    state.running = false;
+    btn.disabled = true;
+    progArea.hidden = false;
+
+    try {
+      const presetKey = selPreset.value;
+      const preset = WALLPAPER_PRESETS[presetKey];
+      const sourceMode = selSourceMode.value;
+      const periodY = Number(sliderPeriodY.value);
+      const phaseX = Number(sliderPhaseX.value);
+      const phaseY = Number(sliderPhaseY.value);
+      const useBilinear = chkBilinear.checked;
+
+      let hdTileSize = state.tileSize;
+      let hdHist = state.histogram;
+      let refHistForMatching = null;
+
+      if (sourceMode !== "live") {
+        hdTileSize = Number(selTileRes.value);
+        const totalIters = Number(selIters.value);
+        hdHist = new Uint32Array(hdTileSize * hdTileSize);
+        if (sourceMode === "recompute_matched") {
+          refHistForMatching = state.histogram;
+        }
+        const chunkIters = 10_000_000;
+        const chunks = Math.ceil(totalIters / chunkIters);
+        let doneIters = 0;
+
+        for (let c = 0; c < chunks; c++) {
+          const batch = Math.min(chunkIters, totalIters - doneIters);
+          const pct = Math.round((doneIters / totalIters) * 85);
+          progStatus.textContent = `1/2 · Berechne ${hdTileSize}×${hdTileSize} Grundkachel (${(doneIters / 1e6).toFixed(0)} / ${(totalIters / 1e6).toFixed(0)} Mio. Iterationen auf ${workerPool.numWorkers} Kernen)…`;
+          progPct.textContent = `${pct} %`;
+          progBar.style.width = `${pct}%`;
+          await new Promise((r) => setTimeout(r, 15));
+
+          const slices = await workerPool.runBatch(
+            state.params,
+            state.hexA,
+            hdTileSize,
+            batch,
+            c * 100 + 7
+          );
+          const len = hdHist.length;
+          for (const s of slices) {
+            for (let i = 0; i < len; i++) {
+              hdHist[i] += s[i];
+            }
+          }
+          doneIters += batch;
+        }
+      }
+
+      const stem = `${state.params.id || "QUILT"}_${state.palette.id}`;
+
+      if (preset.splitDual) {
+        // Render Left 5K (5120x2880) and Right 5K (5120x2880) seamlessly
+        const singleW = 5120;
+        const singleH = 2880;
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = singleW;
+        offCanvas.height = singleH;
+        const offCtx = offCanvas.getContext("2d", { alpha: false });
+        const imgData = offCtx.createImageData(singleW, singleH);
+        const buf32 = new Uint32Array(imgData.data.buffer);
+
+        progStatus.textContent = "Rendere & speichere linken 5K-Monitor (5120×2880 px)…";
+        progPct.textContent = "90 %";
+        progBar.style.width = "90%";
+        await new Promise((r) => setTimeout(r, 25));
+
+        renderWidescreenToRgbaU32(
+          hdHist,
+          hdTileSize,
+          state.params.type,
+          buf32,
+          singleW,
+          singleH,
+          0,
+          singleH,
+          periodY,
+          phaseX,
+          phaseY,
+          useBilinear,
+          refHistForMatching
+        );
+        offCtx.putImageData(imgData, 0, 0);
+        await downloadCanvasAsPng(offCanvas, `${stem}_5K_LEFT_5120x2880.png`);
+
+        progStatus.textContent = "Rendere & speichere rechten 5K-Monitor (5120×2880 px)…";
+        progPct.textContent = "96 %";
+        progBar.style.width = "96%";
+        await new Promise((r) => setTimeout(r, 25));
+
+        renderWidescreenToRgbaU32(
+          hdHist,
+          hdTileSize,
+          state.params.type,
+          buf32,
+          singleW,
+          singleH,
+          singleW, // Seamless continuation at x = 5120!
+          singleH,
+          periodY,
+          phaseX,
+          phaseY,
+          useBilinear,
+          refHistForMatching
+        );
+        offCtx.putImageData(imgData, 0, 0);
+        await downloadCanvasAsPng(offCanvas, `${stem}_5K_RIGHT_5120x2880.png`);
+      } else {
+        progStatus.textContent = `Rendere & komprimiere ${preset.totalW}×${preset.totalH} Ultra-HD PNG…`;
+        progPct.textContent = "92 %";
+        progBar.style.width = "92%";
+        await new Promise((r) => setTimeout(r, 25));
+
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = preset.totalW;
+        offCanvas.height = preset.totalH;
+        const offCtx = offCanvas.getContext("2d", { alpha: false });
+        const imgData = offCtx.createImageData(preset.totalW, preset.totalH);
+        const buf32 = new Uint32Array(imgData.data.buffer);
+
+        renderWidescreenToRgbaU32(
+          hdHist,
+          hdTileSize,
+          state.params.type,
+          buf32,
+          preset.totalW,
+          preset.totalH,
+          0,
+          preset.totalH,
+          periodY,
+          phaseX,
+          phaseY,
+          useBilinear,
+          refHistForMatching
+        );
+        offCtx.putImageData(imgData, 0, 0);
+        await downloadCanvasAsPng(
+          offCanvas,
+          `${stem}_${preset.totalW}x${preset.totalH}.png`
+        );
+      }
+
+      progStatus.textContent = "✅ Fertig! Ultra-HD Wallpaper wurde heruntergeladen.";
+      progPct.textContent = "100 %";
+      progBar.style.width = "100%";
+    } finally {
+      btn.disabled = false;
+      state.running = wasRunning;
+    }
+  });
+}
+
+
 // --- 13. Theme Switcher (Light default + Dark + System, persisted in localStorage) ---
 function initThemeSwitcher() {
   const meta = document.querySelector('meta[name="color-scheme"]');
@@ -1145,6 +1654,7 @@ async function init() {
   populatePalettes();
   initPaletteEditor();
   initBenchmarkArena();
+  initWallpaperStudio();
 
   const hasRustWasm = await tryLoadRustWasm();
   document.getElementById("engineHardwareHint").textContent =

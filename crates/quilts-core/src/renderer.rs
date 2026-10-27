@@ -105,3 +105,103 @@ pub fn render_quilt_to_rgba(
         }
     }
 }
+
+/// Aspect-correct Widescreen (16:9 / 32:9 Dual-5K) renderer with phase shift `(phase_x, phase_y)`
+/// and bilinear subpixel interpolation for ultra-high-resolution desktop wallpapers.
+pub fn render_quilt_widescreen_rgba(
+    histogram: &[u32],
+    tile_size: usize,
+    quilt_type: QuiltType,
+    palette: &Palette,
+    nperiod_y: f64,
+    phase_x: f64,
+    phase_y: f64,
+    max_hit: u32,
+    out_rgba: &mut [u8],
+    canvas_width: usize,
+    canvas_height: usize,
+) {
+    let lut = palette.build_rgba_lut();
+    let low_border = palette.low_border;
+    let mode = palette.mapping_mode;
+    let gamma_inv = 1.0 / palette.gamma.max(0.1);
+    let log_max = ((max_hit.max(2) as f32).ln()).max(1.0);
+    let sqrt_max = ((max_hit.max(2) as f32).sqrt()).max(1.0);
+
+    // Precompute normalized float intensity [0.0 .. 254.0] per fundamental tile cell for smooth bilinear interpolation
+    let mut tile_intensity = vec![0.0f32; tile_size * tile_size];
+    for (idx, &mc) in histogram.iter().enumerate().take(tile_size * tile_size) {
+        if mc > 0 && mc >= low_border {
+            tile_intensity[idx] = match mode {
+                ColorMappingMode::Classic1996 => (mc as f32).min(254.0),
+                ColorMappingMode::LogarithmicHdr => {
+                    let norm = ((mc as f32).ln() / log_max).clamp(0.0, 1.0).powf(gamma_inv);
+                    (1.0 + norm * 253.0).clamp(1.0, 254.0)
+                }
+                ColorMappingMode::SqrtGamma => {
+                    let norm = ((mc as f32).sqrt() / sqrt_max)
+                        .clamp(0.0, 1.0)
+                        .powf(gamma_inv);
+                    (1.0 + norm * 253.0).clamp(1.0, 254.0)
+                }
+            };
+        }
+    }
+
+    let scale_Per_pixel = nperiod_y.max(0.25) / (canvas_height.max(1) as f64);
+    let scale_t = tile_size as f64;
+    let two_over_sq3 = 2.0 / 3.0_f64.sqrt();
+
+    let sample_bilinear = |u: f64, v: f64| -> u32 {
+        let fx = u * scale_t;
+        let fy = v * scale_t;
+        let x0 = (fx.floor() as usize) % tile_size;
+        let y0 = (fy.floor() as usize) % tile_size;
+        let x1 = (x0 + 1) % tile_size;
+        let y1 = (y0 + 1) % tile_size;
+        let dx = (fx - fx.floor()) as f32;
+        let dy = (fy - fy.floor()) as f32;
+
+        let i00 = tile_intensity[y0 * tile_size + x0];
+        let i10 = tile_intensity[y0 * tile_size + x1];
+        let i01 = tile_intensity[y1 * tile_size + x0];
+        let i11 = tile_intensity[y1 * tile_size + x1];
+
+        let top = i00 + dx * (i10 - i00);
+        let bot = i01 + dx * (i11 - i01);
+        let val = (top + dy * (bot - top)).round() as usize;
+        lut[val.min(254)]
+    };
+
+    for py in 0..canvas_height {
+        let y_world = (canvas_height - 1 - py) as f64 * scale_Per_pixel + phase_y;
+        let dst_row_start = py * canvas_width * 4;
+
+        match quilt_type {
+            QuiltType::Quad => {
+                let v = y_world - y_world.floor();
+                for px in 0..canvas_width {
+                    let x_world = px as f64 * scale_Per_pixel + phase_x;
+                    let u = x_world - x_world.floor();
+                    let rgba = sample_bilinear(u, v);
+                    let offset = dst_row_start + px * 4;
+                    out_rgba[offset..offset + 4].copy_from_slice(&rgba.to_le_bytes());
+                }
+            }
+            QuiltType::Hex => {
+                let by_raw = y_world * two_over_sq3;
+                let half_by = 0.5 * by_raw;
+                let by = by_raw - by_raw.floor();
+                for px in 0..canvas_width {
+                    let x_world = px as f64 * scale_Per_pixel + phase_x;
+                    let bx_raw = x_world - half_by;
+                    let bx = bx_raw - bx_raw.floor();
+                    let rgba = sample_bilinear(bx, by);
+                    let offset = dst_row_start + px * 4;
+                    out_rgba[offset..offset + 4].copy_from_slice(&rgba.to_le_bytes());
+                }
+            }
+        }
+    }
+}
+

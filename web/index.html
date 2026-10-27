@@ -43,6 +43,9 @@
     </div>
 
     <div class="topbar-actions">
+      <button type="button" class="btn btn-primary" id="btnOpenWallpaperStudio">
+        🖼 5K / Dual-5K Wallpaper Studio
+      </button>
       <button type="button" class="btn btn-accent" id="btnOpenBenchmark">
         ⚡ Benchmark-Arena
       </button>
@@ -128,9 +131,11 @@
           <select id="selectResolution" class="select-inline">
             <option value="160">160×160 (Original DOS 1996)</option>
             <option value="256">256×256</option>
-            <option value="384" selected>384×384 (Empfohlen)</option>
+            <option value="384">384×384</option>
             <option value="512">512×512 (HD)</option>
-            <option value="768">768×768 (Ultra)</option>
+            <option value="768" selected>768×768 (Ultra)</option>
+            <option value="1024">1024×1024 (Master)</option>
+            <option value="1440">1440×1440 (5K Nativ)</option>
           </select>
         </div>
         <div class="quick-item">
@@ -142,6 +147,7 @@
           </select>
         </div>
         <div class="quick-actions">
+          <button type="button" class="btn-small" id="btnQuickWallpaper">🖼 5K Wallpaper…</button>
           <button type="button" class="btn-small" id="btnExportPng">📸 PNG speichern</button>
           <button type="button" class="btn-small" id="btnExportTga" title="Originalgetreuer 8-Bit Color-Mapped Truevision TGA-Export wie 1996">💾 Original .TGA (1996)</button>
           <button type="button" class="btn-small" id="btnExportQup">📄 .QUP speichern</button>
@@ -321,6 +327,120 @@
       <form method="dialog">
         <button value="close" class="btn">Fertig</button>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Modal 3: 5K / Dual-5K Ultra-HD Wallpaper Studio -->
+  <dialog id="dialogWallpaper" closedby="any" aria-labelledby="wpDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <h2 id="wpDialogTitle">🖼 5K / Dual-5K Ultra-HD Wallpaper Studio</h2>
+        <p class="dialog-subtitle">
+          Erzeugt verzerrungsfreie, nahtlos gekachelte Breitbild-Hintergrundbilder mit hochauflösendem Grundkachel-Histogramm und Subpixel-Glättung.
+        </p>
+      </div>
+      <form method="dialog">
+        <button value="close" class="btn-icon" aria-label="Wallpaper-Studio schließen">✕</button>
+      </form>
+    </div>
+
+    <div class="dialog-body wp-studio-body">
+      <div class="wp-preview-box">
+        <div class="wp-preview-header">
+          <span id="wpPreviewLabel">Live-Ausschnitt &amp; Seitenverhältnis-Vorschau (32:9 Dual-5K Split)</span>
+          <span class="badge-subtle" id="wpAspectBadge">10240 × 2880 px (2× 5120×2880)</span>
+        </div>
+        <div class="wp-canvas-wrap">
+          <canvas id="wpPreviewCanvas" width="768" height="216"></canvas>
+        </div>
+      </div>
+
+      <div class="wp-controls-grid">
+        <div class="wp-col">
+          <label class="field-label" for="wpSelectPresetSize">Ziel-Monitor &amp; Ausgabeformat</label>
+          <select id="wpSelectPresetSize" class="select-input">
+            <option value="dual5k_split" selected>🖥🖥 Dual 5K Split: 2× 5120×2880 PNG (Links + Rechts nahtlos verbunden!)</option>
+            <option value="5k">🖥 Single 5K Studio Display: 5120×2880 PNG (16:9 · 14,7 MP)</option>
+            <option value="dual5k_single">🖥🖥 Dual 5K Panorama (1 Datei): 10240×2880 PNG (32:9 · 29,5 MP)</option>
+            <option value="6k">🖥 Apple 6K Pro Display XDR: 6016×3384 PNG (16:9 · 20,4 MP)</option>
+            <option value="4k">🖥 4K UHD Monitor: 3840×2160 PNG (16:9 · 8,3 MP)</option>
+            <option value="ipad13">📱 iPad Pro 13" (M4): 2752×2064 PNG (4:3 · 5,7 MP)</option>
+            <option value="square4k">🖼 Quadratischer Kunstdruck: 4096×4096 PNG (1:1 · 16,8 MP)</option>
+          </select>
+
+          <label class="field-label" for="wpSelectSourceMode">Datenquelle &amp; Belichtungs-Abgleich</label>
+          <select id="wpSelectSourceMode" class="select-input">
+            <option value="live" selected>✨ Aktuelles Live-Histogramm direkt nutzen (Sofort-Export · 100 % identische Farben!)</option>
+            <option value="recompute_matched">🔬 Neu berechnen in 1440×1440 + Farbbereich an Live-Bild anpassen</option>
+            <option value="recompute_raw">🧪 Neu berechnen (Roh-Belichtung ohne Abgleich)</option>
+          </select>
+
+          <label class="field-label" for="wpSelectTileRes">Grundkachel-Auflösung (bei Neuberechnung)</label>
+          <select id="wpSelectTileRes" class="select-input">
+            <option value="1024">1024 × 1024 px pro Einzelkachel</option>
+            <option value="1440" selected>1440 × 1440 px pro Einzelkachel (1:1 Nativ für 5K bei 2× Höhe!)</option>
+            <option value="2048">2048 × 2048 px pro Einzelkachel (Maximales Studio-Supersampling)</option>
+          </select>
+
+          <label class="field-label" for="wpSelectIterations">Iterations-Tiefe (bei Neuberechnung)</label>
+          <select id="wpSelectIterations" class="select-input">
+            <option value="50000000">50 Mio. Iterationen (~2 Sek. auf M4 Pro)</option>
+            <option value="150000000" selected>150 Mio. Iterationen (Empfohlen)</option>
+            <option value="400000000">400 Mio. Iterationen (Ultra-Deep HDR)</option>
+            <option value="1000000000">1 Milliarde Iterationen (Referenz)</option>
+          </select>
+        </div>
+
+        <div class="wp-col">
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="wpSliderPeriodY">Vertikale Kachel-Anzahl (Symmetrie-Maßstab)</label>
+              <output id="wpOutPeriodY">2.00</output>
+            </div>
+            <input type="range" id="wpSliderPeriodY" min="0.5" max="6.0" step="0.25" value="2.0" />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="wpSliderPhaseX">Horizontaler Phasen-Versatz (X-Zentrierung)</label>
+              <output id="wpOutPhaseX">0.00</output>
+            </div>
+            <input type="range" id="wpSliderPhaseX" min="0.0" max="1.0" step="0.01" value="0.0" />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="wpSliderPhaseY">Vertikaler Phasen-Versatz (Y-Zentrierung)</label>
+              <output id="wpOutPhaseY">0.00</output>
+            </div>
+            <input type="range" id="wpSliderPhaseY" min="0.0" max="1.0" step="0.01" value="0.0" />
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="wpChkBilinear" checked />
+            <span>Bilineare Subpixel-Glättung (Anti-Aliasing) aktivieren</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="wp-progress-area" id="wpProgressArea" hidden>
+        <div class="wp-progress-header">
+          <span id="wpProgressStatus">Berechne Ultra-HD Histogramm…</span>
+          <span id="wpProgressPct">0 %</span>
+        </div>
+        <div class="bench-bar-track">
+          <div class="bench-bar-fill" id="wpProgressBar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-footer wp-footer">
+      <form method="dialog">
+        <button value="close" class="btn">Abbrechen</button>
+      </form>
+      <button type="button" class="btn btn-primary" id="btnStartWallpaperRender" autofocus>
+        🚀 Ultra-HD Wallpaper jetzt rendern &amp; herunterladen
+      </button>
     </div>
   </dialog>
 
