@@ -22,8 +22,8 @@ pub struct QuiltSimulator {
     pub min_hit: u32,
     orbit_x: f64,
     orbit_y: f64,
-    simd_orbits_x: [f32; 4],
-    simd_orbits_y: [f32; 4],
+    simd_orbits_x: [f64; 4],
+    simd_orbits_y: [f64; 4],
 }
 
 impl QuiltSimulator {

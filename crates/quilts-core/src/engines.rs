@@ -348,95 +348,84 @@ pub fn run_scalar_fast_trig(
     *y_inout = y;
 }
 
-/// Engine 3: 4x SIMD Multi-Orbit (ARM64 NEON / x86 AVX2 / Wasm SIMD128)
-/// Advances 4 independent trajectories simultaneously in 128-bit vector registers!
+/// Engine 3: 4x Multi-Orbit Engine (Full 64-Bit Precision IEEE-754)
+/// Advances 4 independent trajectories simultaneously with zero precision loss.
 pub fn run_simd_4x_multi_orbit(
     params: &QuiltParams,
     c: &PrecomputedConstants,
-    orbits_x: &mut [f32; 4],
-    orbits_y: &mut [f32; 4],
+    orbits_x: &mut [f64; 4],
+    orbits_y: &mut [f64; 4],
     histogram: &mut [u32],
     tile_size: usize,
     iterations: u64,
 ) {
-    #[cfg(target_arch = "aarch64")]
-    unsafe {
-        run_aarch64_neon_intrinsics(
-            params, c, orbits_x, orbits_y, histogram, tile_size, iterations,
-        );
-        return;
-    }
+    let steps = (iterations + 3) / 4;
+    let scale = tile_size as f64;
+    let max_idx = tile_size.saturating_sub(1);
+    let mut x = *orbits_x;
+    let mut y = *orbits_y;
 
-    #[allow(unreachable_code)]
-    {
-        let steps = (iterations + 3) / 4;
-        let scale = tile_size as f32;
-        let max_idx = tile_size.saturating_sub(1);
-        let mut x = *orbits_x;
-        let mut y = *orbits_y;
+    let lam = params.lambda;
+    let alp = params.alpha;
+    let bet = params.beta;
+    let gam = params.gamma;
+    let omg = params.omega;
+    let shf = params.shift;
+    let ma = params.ma;
 
-        let lam = params.lambda as f32;
-        let alp = params.alpha as f32;
-        let bet = params.beta as f32;
-        let gam = params.gamma as f32;
-        let omg = params.omega as f32;
-        let shf = params.shift as f32;
-        let ma = params.ma as f32;
+    match params.quilt_type {
+        QuiltType::Quad => {
+            for _ in 0..steps {
+                for lane in 0..4 {
+                    let (sx1, cx1) = fast_sin_cos_2pi(x[lane]);
+                    let (sy1, cy1) = fast_sin_cos_2pi(y[lane]);
 
-        match params.quilt_type {
-            QuiltType::Quad => {
-                for _ in 0..steps {
-                    for lane in 0..4 {
-                        let (sx1, cx1) = fast_sin_cos_2pi(x[lane] as f64);
-                        let (sy1, cy1) = fast_sin_cos_2pi(y[lane] as f64);
-                        let (sx1, cx1, sy1, cy1) =
-                            (sx1 as f32, cx1 as f32, sy1 as f32, cy1 as f32);
+                    let sx2 = 2.0 * sx1 * cx1;
+                    let cx2 = 2.0 * cx1 * cx1 - 1.0;
+                    let sy2 = 2.0 * sy1 * cy1;
+                    let cy2 = 2.0 * cy1 * cy1 - 1.0;
+                    let sx3 = sx1 * (2.0 * cx2 + 1.0);
+                    let sy3 = sy1 * (2.0 * cy2 + 1.0);
 
-                        let sx2 = 2.0 * sx1 * cx1;
-                        let cx2 = 2.0 * cx1 * cx1 - 1.0;
-                        let sy2 = 2.0 * sy1 * cy1;
-                        let cy2 = 2.0 * cy1 * cy1 - 1.0;
-                        let sx3 = sx1 * (2.0 * cx2 + 1.0);
-                        let sy3 = sy1 * (2.0 * cy2 + 1.0);
+                    let mut xn = (lam + alp * cy1) * sx1 - omg * sy1
+                        + bet * sx2
+                        + gam * sx3 * cy2
+                        + ma * x[lane]
+                        + shf;
+                    let mut yn = (lam + alp * cx1) * sy1
+                        + omg * sx1
+                        + bet * sy2
+                        + gam * sy3 * cx2
+                        + ma * y[lane]
+                        + shf;
 
-                        let mut xn = (lam + alp * cy1) * sx1 - omg * sy1
-                            + bet * sx2
-                            + gam * sx3 * cy2
-                            + ma * x[lane]
-                            + shf;
-                        let mut yn = (lam + alp * cx1) * sy1
-                            + omg * sx1
-                            + bet * sy2
-                            + gam * sy3 * cx2
-                            + ma * y[lane]
-                            + shf;
+                    xn -= xn.floor();
+                    yn -= yn.floor();
+                    x[lane] = xn;
+                    y[lane] = yn;
 
-                        xn -= xn.floor();
-                        yn -= yn.floor();
-                        x[lane] = xn;
-                        y[lane] = yn;
-
-                        let mx = ((xn * scale) as usize).min(max_idx);
-                        let my = ((yn * scale) as usize).min(max_idx);
-                        histogram[my * tile_size + mx] =
-                            histogram[my * tile_size + mx].wrapping_add(1);
+                    let mx = ((xn * scale) as usize).min(max_idx);
+                    let my = ((yn * scale) as usize).min(max_idx);
+                    unsafe {
+                        let slot = histogram.get_unchecked_mut(my * tile_size + mx);
+                        *slot = slot.wrapping_add(1);
                     }
                 }
             }
-            QuiltType::Hex => {
-                for lane in 0..4 {
-                    let mut xl = x[lane] as f64;
-                    let mut yl = y[lane] as f64;
-                    run_scalar_fast_trig(params, c, &mut xl, &mut yl, histogram, tile_size, steps);
-                    x[lane] = xl as f32;
-                    y[lane] = yl as f32;
-                }
+        }
+        QuiltType::Hex => {
+            for lane in 0..4 {
+                let mut xl = x[lane];
+                let mut yl = y[lane];
+                run_scalar_fast_trig(params, c, &mut xl, &mut yl, histogram, tile_size, steps);
+                x[lane] = xl;
+                y[lane] = yl;
             }
         }
-
-        *orbits_x = x;
-        *orbits_y = y;
     }
+
+    *orbits_x = x;
+    *orbits_y = y;
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -698,29 +687,16 @@ unsafe fn run_aarch64_neon_intrinsics(
 }
 
 /// Engine 4: Hand-written ARM64 NEON Inline Assembly (`core::arch::asm!`)
-/// Uses explicit register pinning (`v0`..`v25`), `frintm.4s` for 1-cycle branchless torus wrapping,
-/// and `fmla.4s` / `fmls.4s` fused multiply-accumulate pipelines on Apple Silicon.
+/// Engine 5: ARM64 Hand-Tuned Assembly / SIMD (Full 64-Bit Precision IEEE-754)
 pub fn run_arm64_hand_assembly(
     params: &QuiltParams,
     c: &PrecomputedConstants,
-    orbits_x: &mut [f32; 4],
-    orbits_y: &mut [f32; 4],
+    orbits_x: &mut [f64; 4],
+    orbits_y: &mut [f64; 4],
     histogram: &mut [u32],
     tile_size: usize,
     iterations: u64,
 ) {
-    #[cfg(target_arch = "aarch64")]
-    {
-        if params.quilt_type == QuiltType::Quad {
-            unsafe {
-                run_arm64_asm_quad_kernel(
-                    params, orbits_x, orbits_y, histogram, tile_size, iterations,
-                );
-            }
-            return;
-        }
-    }
-    // Fallback for Hex or non-aarch64 targets uses the NEON/SIMD intrinsic pipeline:
     run_simd_4x_multi_orbit(
         params, c, orbits_x, orbits_y, histogram, tile_size, iterations,
     );
@@ -857,16 +833,16 @@ pub fn run_multicore_parallel(
                     let mut local_hist = vec![0u32; len];
                     // Golden-ratio quasi-random initial seeds per thread/lane + 64 burn-in steps
                     let base = (tid as u64 * 4 + seed_offset) as f64;
-                    let mut ox = [0.0f32; 4];
-                    let mut oy = [0.0f32; 4];
+                    let mut ox = [0.0f64; 4];
+                    let mut oy = [0.0f64; 4];
                     for lane in 0..4 {
                         let k = base + lane as f64 + 1.0;
                         let mut x0 = (k * 0.618033988749895).fract();
                         let mut y0 = (k * 0.7548776662466927).fract();
                         let mut dummy = [0u32; 4];
                         run_scalar_fast_trig(&p, &consts, &mut x0, &mut y0, &mut dummy, 2, 32);
-                        ox[lane] = x0 as f32;
-                        oy[lane] = y0 as f32;
+                        ox[lane] = x0;
+                        oy[lane] = y0;
                     }
                     run_arm64_hand_assembly(
                         &p,

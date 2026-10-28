@@ -287,12 +287,15 @@ const ENH21 = E131, ENH22 = 3 * E122 + E132;
 const ENH31 = 3 * E131 + E111, ENH32 = 3 * E132 + E112;
 
 let x = 0.13, y = 0.37;
+let initialized = false;
 
 self.onmessage = (e) => {
-  const { params, hexA, tileSize, count, seed } = e.data;
-  if (seed !== undefined) {
-    x = (seed * 0.618033988749895) % 1.0;
-    y = (seed * 0.7548776662466927) % 1.0;
+  const { params, hexA, tileSize, count, seed, reset } = e.data;
+  if (!initialized || reset || seed !== undefined) {
+    const s = seed !== undefined ? seed : 1;
+    x = (s * 0.618033988749895) % 1.0;
+    y = (s * 0.7548776662466927) % 1.0;
+    initialized = true;
   }
   const hist = new Uint32Array(tileSize * tileSize);
   const scale = tileSize;
@@ -389,7 +392,7 @@ class WorkerPool {
     }
   }
 
-  runBatch(params, hexA, tileSize, totalCount, seedBase) {
+  runBatch(params, hexA, tileSize, totalCount, reset = false) {
     const perWorker = Math.ceil(totalCount / this.numWorkers);
     return Promise.all(
       this.workers.map(
@@ -401,7 +404,8 @@ class WorkerPool {
               hexA,
               tileSize,
               count: perWorker,
-              seed: seedBase + idx + 1,
+              reset,
+              seed: reset ? idx + 1 : undefined,
             });
           })
       )
@@ -413,6 +417,7 @@ class WorkerPool {
 const state = {
   running: true,
   engine: "workers",
+  workerPoolNeedsReset: true,
   batchSize: 500000,
   tileSize: 768,
   canvasSize: 768,
@@ -604,6 +609,7 @@ function resetSimulation() {
   state.minHit = 0;
   state.orbit.x = 0.1;
   state.orbit.y = 0.334;
+  state.workerPoolNeedsReset = true;
   state.hexA = computeHexA(state.params.beta, state.params.gamma);
   syncRustWasmParams();
   renderFrame();
@@ -624,12 +630,14 @@ async function simulationTick() {
     const count = state.batchSize;
 
     if (state.engine === "workers") {
+      const needReset = state.workerPoolNeedsReset;
+      state.workerPoolNeedsReset = false;
       const slices = await workerPool.runBatch(
         state.params,
         state.hexA,
         state.tileSize,
         count,
-        state.totalIterations
+        needReset
       );
       const hist = state.histogram;
       const len = hist.length;
@@ -1185,57 +1193,27 @@ const WALLPAPER_PRESETS = {
     splitDual: false,
   },
   ipad_pro13: {
-    label: "iPad Pro 13\" (M4) & 12.9\" Querformat (2752×2064 px · 4:3)",
+    label: "iPad Pro 13\" (M4) & 12.9\" (2752×2064 px · 4:3)",
     totalW: 2752,
     totalH: 2064,
     splitDual: false,
   },
-  ipad_pro13_p: {
-    label: "iPad Pro 13\" (M4) & 12.9\" Hochformat (2064×2752 px · 3:4)",
-    totalW: 2064,
-    totalH: 2752,
-    splitDual: false,
-  },
   ipad_air11: {
-    label: "iPad Air 11\" & 10.9\" Querformat (2360×1640 px)",
+    label: "iPad Air 11\" & 10.9\" (2360×1640 px · ~1.44:1)",
     totalW: 2360,
     totalH: 1640,
     splitDual: false,
   },
-  ipad_air11_p: {
-    label: "iPad Air 11\" & 10.9\" Hochformat (1640×2360 px)",
-    totalW: 1640,
-    totalH: 2360,
-    splitDual: false,
-  },
   ipad_pro11: {
-    label: "iPad Pro 11\" Querformat (2420×1668 px)",
+    label: "iPad Pro 11\" (2420×1668 px · ~1.45:1)",
     totalW: 2420,
     totalH: 1668,
     splitDual: false,
   },
-  ipad_pro11_p: {
-    label: "iPad Pro 11\" Hochformat (1668×2420 px)",
-    totalW: 1668,
-    totalH: 2420,
-    splitDual: false,
-  },
   ipad_mini: {
-    label: "iPad mini 8.3\" Querformat (2266×1488 px)",
+    label: "iPad mini 8.3\" (2266×1488 px · ~1.52:1)",
     totalW: 2266,
     totalH: 1488,
-    splitDual: false,
-  },
-  ipad_mini_p: {
-    label: "iPad mini 8.3\" Hochformat (1488×2266 px)",
-    totalW: 1488,
-    totalH: 2266,
-    splitDual: false,
-  },
-  ipad13: {
-    label: "iPad Pro 13\" (M4) & 12.9\" (2752×2064 px)",
-    totalW: 2752,
-    totalH: 2064,
     splitDual: false,
   },
   square4k: {

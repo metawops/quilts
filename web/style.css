@@ -502,10 +502,11 @@ input[type="range"] {
 }
 
 .canvas-frame {
-  background-color: var(--bg-canvas);
-  border: 2px solid var(--border-color);
-  border-radius: 10px;
-  padding: 6px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
@@ -520,8 +521,8 @@ input[type="range"] {
   width: auto;
   height: auto;
   aspect-ratio: 1 / 1;
-  background-color: #000000;
-  border-radius: 4px;
+  background-color: transparent;
+  border-radius: 0;
 }
 
 @media (max-width: 1023px) {
