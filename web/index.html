@@ -44,7 +44,7 @@
 
     <div class="topbar-actions">
       <button type="button" class="btn btn-primary" id="btnOpenWallpaperStudio">
-        🖼 <span class="hide-compact">5K / Dual-5K </span>Wallpaper<span class="hide-narrow"> Studio</span>
+        🖼 Wallpaper<span class="hide-narrow"> Studio</span>
       </button>
       <button type="button" class="btn btn-accent" id="btnOpenBenchmark">
         ⚡ Benchmark<span class="hide-narrow">-Arena</span>
@@ -147,7 +147,7 @@
           </select>
         </div>
         <div class="quick-actions">
-          <button type="button" class="btn-small" id="btnQuickWallpaper">🖼 5K Wallpaper…</button>
+          <button type="button" class="btn-small" id="btnQuickWallpaper">🖼 Wallpaper Studio…</button>
           <button type="button" class="btn-small" id="btnExportPng">📸 PNG speichern</button>
           <button type="button" class="btn-small" id="btnExportTga" title="Originalgetreuer 8-Bit Color-Mapped Truevision TGA-Export wie 1996">💾 Original .TGA (1996)</button>
           <button type="button" class="btn-small" id="btnExportQup">📄 .QUP speichern</button>
@@ -334,9 +334,9 @@
   <dialog id="dialogWallpaper" closedby="any" aria-labelledby="wpDialogTitle">
     <div class="dialog-header">
       <div>
-        <h2 id="wpDialogTitle">🖼 5K / Dual-5K Ultra-HD Wallpaper Studio</h2>
+        <h2 id="wpDialogTitle">🖼 Ultra-HD Wallpaper Studio (Mac &amp; iPad)</h2>
         <p class="dialog-subtitle">
-          Erzeugt verzerrungsfreie, nahtlos gekachelte Breitbild-Hintergrundbilder mit hochauflösendem Grundkachel-Histogramm und Subpixel-Glättung.
+          Erzeugt verzerrungsfreie, nahtlos gekachelte Hintergrundbilder für Mac-Monitore und iPads mit hochauflösendem Grundkachel-Histogramm und Subpixel-Glättung.
         </p>
       </div>
       <form method="dialog">
@@ -357,15 +357,30 @@
 
       <div class="wp-controls-grid">
         <div class="wp-col">
-          <label class="field-label" for="wpSelectPresetSize">Ziel-Monitor &amp; Ausgabeformat</label>
+          <label class="field-label" for="wpSelectPresetSize">Ziel-Gerät &amp; Ausgabeformat</label>
           <select id="wpSelectPresetSize" class="select-input">
-            <option value="dual5k_split" selected>🖥🖥 Dual 5K Split: 2× 5120×2880 PNG (Links + Rechts nahtlos verbunden!)</option>
-            <option value="5k">🖥 Single 5K Studio Display: 5120×2880 PNG (16:9 · 14,7 MP)</option>
-            <option value="dual5k_single">🖥🖥 Dual 5K Panorama (1 Datei): 10240×2880 PNG (32:9 · 29,5 MP)</option>
-            <option value="6k">🖥 Apple 6K Pro Display XDR: 6016×3384 PNG (16:9 · 20,4 MP)</option>
-            <option value="4k">🖥 4K UHD Monitor: 3840×2160 PNG (16:9 · 8,3 MP)</option>
-            <option value="ipad13">📱 iPad Pro 13" (M4): 2752×2064 PNG (4:3 · 5,7 MP)</option>
-            <option value="square4k">🖼 Quadratischer Kunstdruck: 4096×4096 PNG (1:1 · 16,8 MP)</option>
+            <optgroup label="🖥 Mac &amp; Desktop-Monitore">
+              <option value="dual5k_split" selected>🖥🖥 Dual 5K Split: 2× 5120×2880 PNG (Links + Rechts nahtlos)</option>
+              <option value="5k">🖥 Single 5K Studio Display: 5120×2880 PNG (16:9 · 14,7 MP)</option>
+              <option value="dual5k_single">🖥🖥 Dual 5K Panorama: 10240×2880 PNG (32:9 · 29,5 MP)</option>
+              <option value="6k">🖥 Apple 6K Pro Display XDR: 6016×3384 PNG (16:9 · 20,4 MP)</option>
+              <option value="4k">🖥 4K UHD Monitor: 3840×2160 PNG (16:9 · 8,3 MP)</option>
+            </optgroup>
+            <optgroup label="📱 iPad Querformat (Landscape)">
+              <option value="ipad_pro13">📱 iPad Pro 13" (M4) &amp; 12.9": 2752×2064 PNG (4:3 · 5,7 MP)</option>
+              <option value="ipad_air11">📱 iPad Air 11" &amp; 10.9": 2360×1640 PNG (~1.44:1 · 3,9 MP)</option>
+              <option value="ipad_pro11">📱 iPad Pro 11": 2420×1668 PNG (~1.45:1 · 4,0 MP)</option>
+              <option value="ipad_mini">📱 iPad mini 8.3": 2266×1488 PNG (~1.52:1 · 3,4 MP)</option>
+            </optgroup>
+            <optgroup label="📱 iPad Hochformat (Portrait)">
+              <option value="ipad_pro13_p">📱 iPad Pro 13" (M4) &amp; 12.9" Hochformat: 2064×2752 PNG (3:4 · 5,7 MP)</option>
+              <option value="ipad_air11_p">📱 iPad Air 11" &amp; 10.9" Hochformat: 1640×2360 PNG (3,9 MP)</option>
+              <option value="ipad_pro11_p">📱 iPad Pro 11" Hochformat: 1668×2420 PNG (4,0 MP)</option>
+              <option value="ipad_mini_p">📱 iPad mini 8.3" Hochformat: 1488×2266 PNG (3,4 MP)</option>
+            </optgroup>
+            <optgroup label="🖼 Kunstdruck">
+              <option value="square4k">🖼 Quadratischer Kunstdruck: 4096×4096 PNG (1:1 · 16,8 MP)</option>
+            </optgroup>
           </select>
 
           <label class="field-label" for="wpSelectSourceMode">Datenquelle &amp; Belichtungs-Abgleich</label>
