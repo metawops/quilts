@@ -44,11 +44,66 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.65rem 1.25rem;
+  gap: 0.75rem;
+  padding: 0.5rem clamp(0.75rem, 1.5vw, 1.25rem);
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   flex-wrap: wrap;
+}
+
+@media (max-width: 1280px) {
+  .topbar {
+    padding: 0.45rem 0.75rem;
+    gap: 0.5rem;
+  }
+  .brand {
+    gap: 0.5rem;
+  }
+  .brand h1 {
+    font-size: 1.05rem;
+  }
+  .subtitle {
+    display: none;
+  }
+  .telemetry-strip {
+    gap: 0.75rem;
+    padding: 0.25rem 0.65rem;
+  }
+  .metric-label {
+    font-size: 0.62rem;
+  }
+  .metric-value {
+    font-size: 0.82rem;
+  }
+  .topbar-actions {
+    gap: 0.35rem;
+  }
+  .topbar-actions .btn {
+    padding: 0.38rem 0.55rem;
+    font-size: 0.76rem;
+  }
+  .hide-compact {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .hide-narrow {
+    display: none;
+  }
+  .topbar-actions {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+  }
+  .telemetry-strip {
+    order: 3;
+    width: 100%;
+    justify-content: space-around;
+  }
 }
 
 .brand {
@@ -119,57 +174,88 @@ body {
 
 .theme-switcher {
   display: inline-flex;
+  align-items: center;
   background-color: var(--bg-subtle);
   border: 1px solid var(--border-color);
-  border-radius: 7px;
+  border-radius: 999px;
   padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  padding: 0.3rem 0.55rem;
-  border-radius: 5px;
+  font-size: 0.88rem;
+  width: 29px;
+  height: 27px;
+  border-radius: 999px;
   cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theme-btn:hover {
+  color: var(--text-main);
+  background-color: rgba(128, 128, 128, 0.12);
 }
 
 .theme-btn.active {
   background-color: var(--bg-card);
   color: var(--text-main);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Main Workspace Layout */
 .workspace {
   display: grid;
-  grid-template-columns: 330px 1fr 330px;
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-columns: clamp(250px, 23vw, 320px) minmax(0, 1fr) clamp(250px, 23vw, 320px);
+  grid-template-areas: "left stage right";
+  gap: clamp(0.5rem, 1.1vw, 1rem);
+  padding: clamp(0.5rem, 1.1vw, 1rem);
   flex: 1;
   align-items: start;
+  min-width: 0;
 }
 
-@media (max-width: 1280px) {
+.panel-left {
+  grid-area: left;
+  min-width: 0;
+}
+
+.canvas-stage {
+  grid-area: stage;
+  min-width: 0;
+}
+
+.panel-right {
+  grid-area: right;
+  min-width: 0;
+}
+
+/* Tablet Portrait Mode (iPad im Hochformat: 680px bis 1023px) */
+@media (max-width: 1023px) {
   .workspace {
-    grid-template-columns: 300px 1fr;
-  }
-  .panel-right {
-    grid-column: 1 / -1;
-    display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-areas:
+      "stage stage"
+      "left right";
   }
 }
 
-@media (max-width: 900px) {
+/* Narrow / Compact Split-View (< 680px) */
+@media (max-width: 679px) {
   .workspace {
     grid-template-columns: 1fr;
-  }
-  .panel-right {
-    grid-template-columns: 1fr;
+    grid-template-areas:
+      "stage"
+      "left"
+      "right";
   }
 }
 
@@ -183,11 +269,12 @@ body {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 0.85rem 1rem;
+  padding: clamp(0.65rem, 1vw, 0.85rem) clamp(0.75rem, 1.2vw, 1rem);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+  min-width: 0;
 }
 
 .card-header {
@@ -234,6 +321,8 @@ body {
   background-color: var(--bg-subtle);
   color: var(--text-main);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
@@ -265,6 +354,8 @@ body {
   background-color: var(--bg-subtle);
   color: var(--text-main);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-small:hover {
@@ -357,7 +448,7 @@ kbd {
 }
 
 .param-num-input {
-  width: 86px;
+  width: clamp(68px, 18vw, 86px);
   font-family: "SF Mono", ui-monospace, monospace;
   font-size: 0.78rem;
   padding: 0.15rem 0.35rem;
@@ -372,6 +463,7 @@ input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .params-list {
@@ -410,13 +502,20 @@ input[type="range"] {
 
 #quiltCanvas {
   display: block;
-  max-width: min(100%, 78vh);
-  max-height: 78vh;
+  max-width: min(100%, 70dvh);
+  max-height: 70dvh;
   width: auto;
   height: auto;
   aspect-ratio: 1 / 1;
   background-color: #000000;
   border-radius: 4px;
+}
+
+@media (max-width: 1023px) {
+  #quiltCanvas {
+    max-height: 48dvh;
+    max-width: min(100%, 48dvh);
+  }
 }
 
 .canvas-Quickbar {
@@ -507,6 +606,8 @@ input[type="range"] {
 dialog {
   margin: auto;
   width: min(760px, 94vw);
+  max-height: 90dvh;
+  overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   background-color: var(--bg-card);

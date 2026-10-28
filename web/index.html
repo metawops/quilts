@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="light" />
   <script>
     try {
@@ -44,18 +44,18 @@
 
     <div class="topbar-actions">
       <button type="button" class="btn btn-primary" id="btnOpenWallpaperStudio">
-        🖼 5K / Dual-5K Wallpaper Studio
+        🖼 <span class="hide-compact">5K / Dual-5K </span>Wallpaper<span class="hide-narrow"> Studio</span>
       </button>
       <button type="button" class="btn btn-accent" id="btnOpenBenchmark">
-        ⚡ Benchmark-Arena
+        ⚡ Benchmark<span class="hide-narrow">-Arena</span>
       </button>
       <button type="button" class="btn" id="btnOpenPaletteEditor">
-        🎨 16×16 Paletten-Editor
+        🎨 <span class="hide-narrow">16×16 </span>Paletten-Editor
       </button>
       <div class="theme-switcher" role="group" aria-label="Farbschema der Benutzungsoberfläche">
-        <button type="button" class="theme-btn" data-scheme="light" title="Helles Design (Standard)">☀️ Hell</button>
-        <button type="button" class="theme-btn" data-scheme="dark" title="Dunkles Design">🌙 Dunkel</button>
-        <button type="button" class="theme-btn" data-scheme="light dark" title="Systemeinstellung folgen">💻 System</button>
+        <button type="button" class="theme-btn" data-scheme="light" aria-label="Helles Design (Standard)" title="Helles Design (Standard)">☀️</button>
+        <button type="button" class="theme-btn" data-scheme="dark" aria-label="Dunkles Design" title="Dunkles Design">🌙</button>
+        <button type="button" class="theme-btn" data-scheme="light dark" aria-label="Systemeinstellung folgen" title="Systemeinstellung folgen">💻</button>
       </div>
     </div>
   </header>
