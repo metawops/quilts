@@ -1,4 +1,5 @@
-// Quilts V2.0 (1996 -> 2026) – High-Speed Web Application & Multi-Backend Arena
+// Quilts V2 (1996 -> 2026) – High-Speed Web Application & Multi-Backend Arena
+export const APP_VERSION = "0.3.6";
 import { QUILTS_CATALOG } from "./assets-data.js";
 
 // --- 1. Fallback for <dialog closedby="any"> in Safari (from modern-web-guidance) ---

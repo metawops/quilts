@@ -77,6 +77,23 @@ body {
   font-weight: 700;
   white-space: nowrap;
   letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.version-badge {
+  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  margin-left: 0.35rem;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  vertical-align: middle;
 }
 
 .subtitle {
@@ -201,6 +218,10 @@ body {
   }
   .brand h1 {
     font-size: 1.02rem;
+  }
+  .version-badge {
+    font-size: 0.58rem;
+    padding: 0.08rem 0.35rem;
   }
   .telemetry-strip {
     display: grid;
