@@ -1,5 +1,5 @@
 // Quilts V2 (1996 -> 2026) – High-Speed Web Application & Multi-Backend Arena
-export const APP_VERSION = "0.4.1";
+export const APP_VERSION = "0.4.2";
 import { QUILTS_CATALOG } from "./assets-data.js";
 import { t, getLang, setLanguage } from "./i18n.js";
 
@@ -292,7 +292,7 @@ let x = 0.13, y = 0.37;
 let initialized = false;
 
 self.onmessage = (e) => {
-  const { params, hexA, tileSize, count, seed, reset } = e.data;
+  const { batchId, params, hexA, tileSize, count, seed, reset } = e.data;
   if (!initialized || reset || seed !== undefined) {
     const s = seed !== undefined ? seed : 1;
     x = (s * 0.618033988749895) % 1.0;
@@ -378,7 +378,7 @@ self.onmessage = (e) => {
       hist[my * tileSize + mx]++;
     }
   }
-  self.postMessage({ hist }, [hist.buffer]);
+  self.postMessage({ batchId, hist }, [hist.buffer]);
 };
 `;
 
@@ -386,7 +386,7 @@ class WorkerPool {
   constructor() {
     this.numWorkers = Math.min(12, Math.max(2, navigator.hardwareConcurrency || 4));
     this.workers = [];
-    this.busy = false;
+    this.currentBatchId = 0;
     const blob = new Blob([WORKER_SOURCE], { type: "application/javascript" });
     const url = URL.createObjectURL(blob);
     for (let i = 0; i < this.numWorkers; i++) {
@@ -395,18 +395,28 @@ class WorkerPool {
   }
 
   runBatch(params, hexA, tileSize, totalCount, reset = false) {
+    const batchId = ++this.currentBatchId;
     const perWorker = Math.ceil(totalCount / this.numWorkers);
     return Promise.all(
       this.workers.map(
         (w, idx) =>
           new Promise((resolve) => {
-            w.onmessage = (e) => resolve(e.data.hist);
+            const handler = (e) => {
+              if (!e.data || e.data.batchId !== batchId) {
+                // Ignore stale message from an earlier/orphaned batch
+                return;
+              }
+              w.removeEventListener("message", handler);
+              resolve(e.data.hist);
+            };
+            w.addEventListener("message", handler);
             w.postMessage({
+              batchId,
               params,
               hexA,
               tileSize,
               count: perWorker,
-              reset,
+              reset: !!reset,
               seed: reset ? idx + 1 : undefined,
             });
           })
@@ -685,23 +695,23 @@ async function simulationTick() {
 
 // --- 9. UI Controls & Event Wiring ---
 const PARAM_DEFS_QUAD = [
-  { key: "lambda", label: "[l]ambda (λ)", min: -1.5, max: 1.5, step: 0.001 },
-  { key: "alpha", label: "[a]lpha (α)", min: -1.5, max: 1.5, step: 0.001 },
-  { key: "beta", label: "[b]eta (β)", min: -1.5, max: 1.5, step: 0.001 },
-  { key: "gamma", label: "[g]amma (γ)", min: -1.5, max: 1.5, step: 0.001 },
-  { key: "omega", label: "[o]mega (ω)", min: -1.5, max: 1.5, step: 0.001 },
-  { key: "shift", label: "s[h]ift", min: -1.0, max: 1.0, step: 0.01 },
-  { key: "ma", label: "[m] (Gitterfaktor)", min: -4.0, max: 4.0, step: 1.0 },
+  { key: "lambda", labelKey: "param_lambda", min: -1.5, max: 1.5, step: 0.001 },
+  { key: "alpha", labelKey: "param_alpha", min: -1.5, max: 1.5, step: 0.001 },
+  { key: "beta", labelKey: "param_beta", min: -1.5, max: 1.5, step: 0.001 },
+  { key: "gamma", labelKey: "param_gamma", min: -1.5, max: 1.5, step: 0.001 },
+  { key: "omega", labelKey: "param_omega", min: -1.5, max: 1.5, step: 0.001 },
+  { key: "shift", labelKey: "param_shift", min: -1.0, max: 1.0, step: 0.01 },
+  { key: "ma", labelKey: "param_ma", min: -4.0, max: 4.0, step: 1.0 },
 ];
 
 const PARAM_DEFS_HEX = [
-  { key: "lambda", label: "[l]ambda (λ)", min: -1.0, max: 1.0, step: 0.001 },
-  { key: "alpha", label: "[a]lpha (α)", min: -1.0, max: 1.0, step: 0.001 },
-  { key: "beta", label: "[b]eta (β)", min: -1.0, max: 1.0, step: 0.001 },
-  { key: "gamma", label: "[g]amma (γ)", min: -1.0, max: 1.0, step: 0.001 },
-  { key: "omega", label: "[o]mega (ω)", min: -1.0, max: 1.0, step: 0.001 },
-  { key: "a", label: "m[1] (a)", min: -2.0, max: 2.0, step: 0.001 },
-  { key: "b", label: "m[2] (b)", min: -2.0, max: 2.0, step: 0.001 },
+  { key: "lambda", labelKey: "param_lambda", min: -1.0, max: 1.0, step: 0.001 },
+  { key: "alpha", labelKey: "param_alpha", min: -1.0, max: 1.0, step: 0.001 },
+  { key: "beta", labelKey: "param_beta", min: -1.0, max: 1.0, step: 0.001 },
+  { key: "gamma", labelKey: "param_gamma", min: -1.0, max: 1.0, step: 0.001 },
+  { key: "omega", labelKey: "param_omega", min: -1.0, max: 1.0, step: 0.001 },
+  { key: "a", labelKey: "param_a", min: -2.0, max: 2.0, step: 0.001 },
+  { key: "b", labelKey: "param_b", min: -2.0, max: 2.0, step: 0.001 },
 ];
 
 function buildParameterSliders() {
@@ -718,7 +728,8 @@ function buildParameterSliders() {
     header.className = "param-header";
 
     const lbl = document.createElement("label");
-    lbl.textContent = def.label;
+    lbl.setAttribute("data-i18n", def.labelKey);
+    lbl.textContent = t(def.labelKey);
 
     const numInput = document.createElement("input");
     numInput.type = "number";
@@ -856,6 +867,128 @@ function updateTelemetryDOM() {
     scalar1996: t("engine_badge_scalar"),
   };
   document.getElementById("statEngineBadge").textContent = engineLabels[state.engine];
+}
+
+function updateScalingIndicator() {
+  const badge = document.getElementById("scalingBadge");
+  if (!badge) return;
+
+  const tSize = state.tileSize;
+  const n = state.nperiod;
+  const cSize = state.canvasSize;
+  const patternSize = n * tSize;
+  const ratio = patternSize / cSize;
+
+  badge.classList.remove("scaling-native", "scaling-down", "scaling-up");
+
+  if (Math.abs(patternSize - cSize) < 2) {
+    badge.classList.add("scaling-native");
+    badge.textContent = `🎯 ${t("scale_native")} · ${patternSize} px`;
+    badge.title = t("scale_tooltip_native")
+      .replace("{n}", n)
+      .replace("{tile}", tSize)
+      .replace("{pattern}", patternSize)
+      .replace("{canvas}", cSize)
+      .replace("{hint}", t("scale_click_hint"));
+  } else if (patternSize > cSize) {
+    badge.classList.add("scaling-down");
+    const factor = ratio.toFixed(1);
+    badge.textContent = `🔍 ${t("scale_down")} ${factor}× · ${patternSize} px`;
+    badge.title = t("scale_tooltip_down")
+      .replace("{n}", n)
+      .replace("{tile}", tSize)
+      .replace("{pattern}", patternSize)
+      .replace("{canvas}", cSize)
+      .replace("{ratio}", ratio.toFixed(2))
+      .replace("{hint}", t("scale_click_hint"));
+  } else {
+    badge.classList.add("scaling-up");
+    const upRatio = cSize / patternSize;
+    const upFactor = upRatio.toFixed(1);
+    badge.textContent = `🔬 ${t("scale_up")} ${upFactor}× · ${patternSize} px`;
+    badge.title = t("scale_tooltip_up")
+      .replace("{n}", n)
+      .replace("{tile}", tSize)
+      .replace("{pattern}", patternSize)
+      .replace("{canvas}", cSize)
+      .replace("{ratio}", upRatio.toFixed(2))
+      .replace("{hint}", t("scale_click_hint"));
+  }
+
+  // Also update the outPeriod in the right sidebar with tile on-screen px
+  const outPeriod = document.getElementById("outPeriod");
+  if (outPeriod) {
+    const tilePx = Math.round(cSize / n);
+    outPeriod.textContent = `${n} × ${n} (${tilePx} px)`;
+  }
+}
+
+function openSamplingDialog() {
+  const dialog = document.getElementById("dialogSamplingInfo");
+  if (!dialog) return;
+
+  const tSize = state.tileSize;
+  const n = state.nperiod;
+  const cSize = state.canvasSize;
+  const patternSize = n * tSize;
+  const ratio = patternSize / cSize;
+
+  const pipeTileSize = document.getElementById("pipeTileSize");
+  const pipeNPeriod = document.getElementById("pipeNPeriod");
+  const pipePatternSize = document.getElementById("pipePatternSize");
+  const pipeCanvasSize = document.getElementById("pipeCanvasSize");
+  const pipeRatioText = document.getElementById("pipeRatioText");
+  const pipeRatioDesc = document.getElementById("pipeRatioDesc");
+  const pipeResultStep = document.getElementById("pipeResultStep");
+
+  if (pipeTileSize) pipeTileSize.textContent = `${tSize} × ${tSize} px`;
+  if (pipeNPeriod) pipeNPeriod.textContent = `${n} × ${n}`;
+  if (pipePatternSize) pipePatternSize.textContent = `${patternSize} × ${patternSize} px`;
+  if (pipeCanvasSize) pipeCanvasSize.textContent = `${cSize} × ${cSize} px`;
+
+  if (pipeResultStep) {
+    pipeResultStep.classList.remove("mode-down", "mode-up");
+  }
+
+  if (Math.abs(patternSize - cSize) < 2) {
+    if (pipeRatioText) pipeRatioText.textContent = `🎯 ${t("scale_native")}`;
+    if (pipeRatioDesc) pipeRatioDesc.textContent = t("sampling_desc_native_pipe");
+  } else if (patternSize > cSize) {
+    if (pipeResultStep) pipeResultStep.classList.add("mode-down");
+    if (pipeRatioText) pipeRatioText.textContent = `🔍 ${t("scale_down")} ${ratio.toFixed(2)}×`;
+    if (pipeRatioDesc) pipeRatioDesc.textContent = t("sampling_desc_down_pipe");
+  } else {
+    const upRatio = cSize / patternSize;
+    if (pipeResultStep) pipeResultStep.classList.add("mode-up");
+    if (pipeRatioText) pipeRatioText.textContent = `🔬 ${t("scale_up")} ${upRatio.toFixed(2)}×`;
+    if (pipeRatioDesc) pipeRatioDesc.textContent = t("sampling_desc_up_pipe");
+  }
+
+  dialog.showModal();
+}
+
+function initSamplingDialog() {
+  const badge = document.getElementById("scalingBadge");
+  const dialog = document.getElementById("dialogSamplingInfo");
+  if (!badge || !dialog) return;
+
+  badge.addEventListener("click", openSamplingDialog);
+
+  dialog.querySelectorAll("button[value='close']").forEach((b) => {
+    b.addEventListener("click", () => dialog.close());
+  });
+
+  dialog.addEventListener("click", (e) => {
+    const rect = dialog.getBoundingClientRect();
+    const isInDialog =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width;
+    if (!isInDialog) {
+      dialog.close();
+    }
+  });
 }
 
 // --- 10. Original 1996 8-Bit Color-Mapped Truevision TGA Export (`saveTGA` lines 127-207) ---
@@ -1227,103 +1360,44 @@ const WALLPAPER_PRESETS = {
 };
 
 /**
- * Builds an exact palette-index tile [0..254] from a histogram.
- * When `referenceLiveHist` is provided, performs exact Percentile / Quantile (CDF) Histogram Matching
- * so that a newly computed high-res histogram has the EXACT same color distribution as the user's live canvas!
+ * Builds an exact palette-index tile [0..254] from a histogram using the current
+ * tone-mapping curve (log, sqrt, classic1996), gamma, and low-border cutoff.
+ * This directly matches the mathematics of the live simulation renderer (renderFrame)
+ * without any sorting or spatial row bias, guaranteeing 100% continuous, seamless,
+ * and stripe-free rendering across any resolution.
  */
-function buildMatchedTileIndices(hist, tSize, referenceLiveHist = null) {
+function buildMatchedTileIndices(hist, tSize) {
   const totalCells = tSize * tSize;
   const lowB = state.lowBorder;
   const mode = state.toneMapping;
   const invGamma = 1.0 / Math.max(0.1, state.gamma);
 
-  const computeRawIndices = (hArr) => {
-    const len = hArr.length;
-    let maxH = 0;
-    for (let i = 0; i < len; i++) {
-      if (hArr[i] > maxH) maxH = hArr[i];
-    }
-    const logMax = Math.max(1.0, Math.log(Math.max(2, maxH)));
-    const sqrtMax = Math.max(1.0, Math.sqrt(Math.max(2, maxH)));
-    const out = new Uint8Array(len);
-
-    for (let i = 0; i < len; i++) {
-      const mc = hArr[i];
-      if (mc === 0 || mc < lowB) {
-        out[i] = 0;
-      } else if (mode === "classic1996") {
-        out[i] = mc > 254 ? 254 : mc;
-      } else if (mode === "log") {
-        const norm = Math.pow(Math.min(1.0, Math.log(mc) / logMax), invGamma);
-        const idx = 1 + ((norm * 253.0) | 0);
-        out[i] = idx > 254 ? 254 : idx;
-      } else {
-        const norm = Math.pow(Math.min(1.0, Math.sqrt(mc) / sqrtMax), invGamma);
-        const idx = 1 + ((norm * 253.0) | 0);
-        out[i] = idx > 254 ? 254 : idx;
-      }
-    }
-    return out;
-  };
-
-  if (!referenceLiveHist || referenceLiveHist === hist) {
-    return computeRawIndices(hist);
-  }
-
-  // Exact CDF / Quantile Matching against `referenceLiveHist`:
-  // 1. Separate hit cells from background cells: background (0 / < lowB) ALWAYS stays 0!
-  const matched = new Uint8Array(totalCells);
-
-  // Extract non-zero palette indices from reference
-  const refIndices = computeRawIndices(referenceLiveHist);
-  const refLen = refIndices.length;
-  let refHitCount = 0;
-  for (let i = 0; i < refLen; i++) {
-    if (refIndices[i] > 0) refHitCount++;
-  }
-
-  if (refHitCount === 0) {
-    return matched; // all black
-  }
-
-  const refHitSorted = new Uint8Array(refHitCount);
-  let rPtr = 0;
-  for (let i = 0; i < refLen; i++) {
-    if (refIndices[i] > 0) {
-      refHitSorted[rPtr++] = refIndices[i];
-    }
-  }
-  refHitSorted.sort();
-
-  // Find all hit cells in `hist`
-  const threshold = Math.max(1, lowB);
-  let histHitCount = 0;
+  let maxH = 0;
   for (let i = 0; i < totalCells; i++) {
-    if (hist[i] >= threshold) histHitCount++;
+    const v = hist[i];
+    if (v > maxH) maxH = v;
   }
+  const logMax = Math.max(1.0, Math.log(Math.max(2, maxH)));
+  const sqrtMax = Math.max(1.0, Math.sqrt(Math.max(2, maxH)));
+  const out = new Uint8Array(totalCells);
 
-  if (histHitCount === 0) {
-    return matched; // all black
-  }
-
-  const hitOrder = new Uint32Array(histHitCount);
-  let hPtr = 0;
   for (let i = 0; i < totalCells; i++) {
-    if (hist[i] >= threshold) {
-      hitOrder[hPtr++] = i;
+    const mc = hist[i];
+    if (mc === 0 || mc < lowB) {
+      out[i] = 0;
+    } else if (mode === "classic1996") {
+      out[i] = mc > 254 ? 254 : mc;
+    } else if (mode === "log") {
+      const norm = Math.pow(Math.min(1.0, Math.log(mc) / logMax), invGamma);
+      const idx = 1 + ((norm * 253.0) | 0);
+      out[i] = idx > 254 ? 254 : idx;
+    } else {
+      const norm = Math.pow(Math.min(1.0, Math.sqrt(mc) / sqrtMax), invGamma);
+      const idx = 1 + ((norm * 253.0) | 0);
+      out[i] = idx > 254 ? 254 : idx;
     }
   }
-  hitOrder.sort((a, b) => hist[a] - hist[b]);
-
-  // Quantile-match ONLY the hit cells
-  const scaleRank = (refHitCount - 1) / Math.max(1, histHitCount - 1);
-  for (let rank = 0; rank < histHitCount; rank++) {
-    const cellIdx = hitOrder[rank];
-    const refPos = (rank * scaleRank) | 0;
-    matched[cellIdx] = refHitSorted[refPos];
-  }
-
-  return matched;
+  return out;
 }
 
 function renderWidescreenToRgbaU32(
@@ -1338,11 +1412,10 @@ function renderWidescreenToRgbaU32(
   periodY,
   phaseX,
   phaseY,
-  useBilinear,
-  referenceLiveHist = null
+  useBilinear
 ) {
   updateColorLut();
-  const tilePaletteIdx = buildMatchedTileIndices(hist, tSize, referenceLiveHist);
+  const tilePaletteIdx = buildMatchedTileIndices(hist, tSize);
   const totalCells = tSize * tSize;
   const tileColorsU32 = new Uint32Array(totalCells);
   for (let i = 0; i < totalCells; i++) {
@@ -1357,8 +1430,8 @@ function renderWidescreenToRgbaU32(
   const sampleSubpixelRGB = (u, v) => {
     const fx = u * tSize;
     const fy = v * tSize;
-    const x0 = Math.floor(fx) % tSize;
-    const y0 = Math.floor(fy) % tSize;
+    const x0 = ((Math.floor(fx) % tSize) + tSize) % tSize;
+    const y0 = ((Math.floor(fy) % tSize) + tSize) % tSize;
     const x1 = (x0 + 1) % tSize;
     const y1 = (y0 + 1) % tSize;
     const dx = fx - Math.floor(fx);
@@ -1569,6 +1642,11 @@ function initWallpaperStudio() {
     btn.disabled = true;
     progArea.hidden = false;
 
+    // Ensure any in-flight simulation tick finishes and releases the workers
+    while (loopInFlight) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
+
     try {
       const presetKey = selPreset.value;
       const preset = WALLPAPER_PRESETS[presetKey];
@@ -1580,15 +1658,11 @@ function initWallpaperStudio() {
 
       let hdTileSize = state.tileSize;
       let hdHist = state.histogram;
-      let refHistForMatching = null;
 
       if (sourceMode !== "live") {
         hdTileSize = Number(selTileRes.value);
         const totalIters = Number(selIters.value);
         hdHist = new Uint32Array(hdTileSize * hdTileSize);
-        if (sourceMode === "recompute_matched") {
-          refHistForMatching = state.histogram;
-        }
         const chunkIters = 10_000_000;
         const chunks = Math.ceil(totalIters / chunkIters);
         let doneIters = 0;
@@ -1601,15 +1675,17 @@ function initWallpaperStudio() {
           progBar.style.width = `${pct}%`;
           await new Promise((r) => setTimeout(r, 15));
 
+          // Only initialize seeds on chunk 0; chunks 1..N continue their orbits seamlessly
           const slices = await workerPool.runBatch(
             state.params,
             state.hexA,
             hdTileSize,
             batch,
-            c * 100 + 7
+            c === 0
           );
           const len = hdHist.length;
           for (const s of slices) {
+            if (!s || s.length !== len) continue; // Length guard prevents any NaN contamination
             for (let i = 0; i < len; i++) {
               hdHist[i] += s[i];
             }
@@ -1648,8 +1724,7 @@ function initWallpaperStudio() {
           periodY,
           phaseX,
           phaseY,
-          useBilinear,
-          refHistForMatching
+          useBilinear
         );
         offCtx.putImageData(imgData, 0, 0);
         await downloadCanvasAsPng(offCanvas, `${stem}_5K_LEFT_5120x2880.png`);
@@ -1671,8 +1746,7 @@ function initWallpaperStudio() {
           periodY,
           phaseX,
           phaseY,
-          useBilinear,
-          refHistForMatching
+          useBilinear
         );
         offCtx.putImageData(imgData, 0, 0);
         await downloadCanvasAsPng(offCanvas, `${stem}_5K_RIGHT_5120x2880.png`);
@@ -1701,8 +1775,7 @@ function initWallpaperStudio() {
           periodY,
           phaseX,
           phaseY,
-          useBilinear,
-          refHistForMatching
+          useBilinear
         );
         offCtx.putImageData(imgData, 0, 0);
         await downloadCanvasAsPng(
@@ -1716,6 +1789,7 @@ function initWallpaperStudio() {
       progBar.style.width = "100%";
     } finally {
       btn.disabled = false;
+      state.workerPoolNeedsReset = true;
       state.running = wasRunning;
     }
   });
@@ -1826,6 +1900,11 @@ function initLanguageSwitcher() {
 
   window.addEventListener("quilts-language-changed", () => {
     updateTelemetryDOM();
+    updateScalingIndicator();
+    const sampDialog = document.getElementById("dialogSamplingInfo");
+    if (sampDialog && sampDialog.open) {
+      openSamplingDialog();
+    }
     const btnRun = document.getElementById("btnToggleRun");
     if (btnRun) {
       btnRun.innerHTML = state.running ? t("btn_pause") : t("btn_resume");
@@ -1852,22 +1931,24 @@ async function init() {
   initBenchmarkArena();
   initWallpaperStudio();
   initAboutDialog();
+  initSamplingDialog();
 
   // Sync canvas-Quickbar width with canvas-frame
   const canvasFrame = document.querySelector(".canvas-frame");
   const quickbar = document.querySelector(".canvas-Quickbar");
   const syncQuickbarWidth = () => {
-    if (!canvasFrame || !quickbar) return;
-    const w = canvasFrame.offsetWidth;
+    if (!canvas || !quickbar) return;
+    const w = canvas.offsetWidth;
     if (w > 0) {
-      quickbar.style.width = `${w}px`;
+      quickbar.style.width = `${w + 2}px`;
     }
   };
-  if (window.ResizeObserver && canvasFrame) {
+  if (window.ResizeObserver && canvas) {
     const ro = new ResizeObserver(() => syncQuickbarWidth());
-    ro.observe(canvasFrame);
+    ro.observe(canvas);
   }
   syncQuickbarWidth();
+  updateScalingIndicator();
 
   const hasRustWasm = await tryLoadRustWasm();
   document.getElementById("engineHardwareHint").textContent =
@@ -1910,7 +1991,7 @@ async function init() {
 
   document.getElementById("sliderPeriod").addEventListener("input", (e) => {
     state.nperiod = Number(e.target.value);
-    document.getElementById("outPeriod").textContent = `${state.nperiod} × ${state.nperiod}`;
+    updateScalingIndicator();
     renderFrame();
   });
 
@@ -1955,6 +2036,7 @@ async function init() {
     state.tileSize = Number(e.target.value);
     state.histogram = new Uint32Array(state.tileSize * state.tileSize);
     tileRgbaU32 = new Uint32Array(state.tileSize * state.tileSize);
+    updateScalingIndicator();
     resetSimulation();
   });
 
@@ -1965,6 +2047,7 @@ async function init() {
     imageData = ctx.createImageData(state.canvasSize, state.canvasSize);
     rgbaU32 = new Uint32Array(imageData.data.buffer);
     syncQuickbarWidth();
+    updateScalingIndicator();
     renderFrame();
   });
 
