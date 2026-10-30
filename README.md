@@ -174,7 +174,7 @@ Sowohl das von Field & Golubitsky entwickelte Programmpaket *Prism* (`iter` & `d
    - **Deutsche Ausgabe:** *Chaotische Symmetrien: Die Suche nach Mustern in Mathematik, Kunst und Natur*, Birkhäuser Verlag, Basel / Boston / Berlin, **1993**, ISBN 978-3-7643-2844-3.
    - **2., überarbeitete Auflage:** *Symmetry in Chaos: A Search for Pattern in Mathematics, Art, and Nature* (2nd Edition), Society for Industrial and Applied Mathematics (SIAM), Philadelphia, **2009**, ISBN 978-0-89871-672-6. ([SIAM Bookstore / DOI: 10.1137/1.9780898717709](https://epubs.siam.org/doi/book/10.1137/1.9780898717709))
 3. **Weiterführende mathematische Grundlagen:**
-   - **Pascal Chossat, Martin Golubitsky:** *„Symmetry-increasing bifurcation of chaotic attractors“*, in: **Physica D: Nonlinear Phenomena**, Vol. 32, Issue 3 (1988), S. 362–392. ([DOI: 10.1016/0167-2789(88)90065-6](https://doi.org/10.1016/0167-2789(88)90065-6))
+   - **Pascal Chossat, Martin Golubitsky:** *„Symmetry-increasing bifurcation of chaotic attractors“*, in: **Physica D: Nonlinear Phenomena**, Vol. 32, Issue 3 (1988), S. 423–436. ([DOI: 10.1016/0167-2789(88)90066-8](https://doi.org/10.1016/0167-2789(88)90066-8))
    - **Greg King, Ian Stewart:** *„Symmetric Chaos“*, in: *Nonlinear Equations in the Applied Sciences* (W. F. Ames, C. Rogers, Hrsg.), Academic Press, 1992, S. 257–315.
 
 ---

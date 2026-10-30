@@ -1925,9 +1925,31 @@ async function loadAppVersion() {
     const data = await res.json();
     const ver = data.version || data.tag;
     if (ver) {
+      const hostname = window.location.hostname;
+      const isLocalOrLab =
+        hostname.endsWith(".lab") ||
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname.startsWith("192.168.");
+
+      const baseUrl = isLocalOrLab
+        ? "http://forgejo.lab/metawops-homelab/quilts"
+        : "https://github.com/metawops/quilts";
+
+      let targetUrl = baseUrl;
+      if (data.commit) {
+        targetUrl = `${baseUrl}/commit/${data.commit}`;
+      } else if (data.tag && !data.tag.includes("-g")) {
+        targetUrl = `${baseUrl}/releases/tag/${data.tag}`;
+      }
+
       const badge = document.getElementById("appVersion");
       if (badge) {
         badge.textContent = ver;
+        badge.href = targetUrl;
+        badge.title = isLocalOrLab
+          ? `Commit ${data.commit || ver} in Forgejo öffnen`
+          : `Commit ${data.commit || ver} auf GitHub öffnen`;
         badge.hidden = false;
       }
       const aboutBadge = document.getElementById("aboutVersionBadge");

@@ -94,6 +94,15 @@ body {
   letter-spacing: 0.02em;
   line-height: 1.25;
   vertical-align: middle;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.version-badge:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  background-color: var(--bg-surface);
 }
 
 .subtitle {
