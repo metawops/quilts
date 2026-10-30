@@ -1,5 +1,5 @@
 // Quilts V2 (1996 -> 2026) – High-Speed Web Application & Multi-Backend Arena
-export const APP_VERSION = "0.4.0";
+export const APP_VERSION = "0.4.1";
 import { QUILTS_CATALOG } from "./assets-data.js";
 import { t, getLang, setLanguage } from "./i18n.js";
 
@@ -1853,6 +1853,22 @@ async function init() {
   initWallpaperStudio();
   initAboutDialog();
 
+  // Sync canvas-Quickbar width with canvas-frame
+  const canvasFrame = document.querySelector(".canvas-frame");
+  const quickbar = document.querySelector(".canvas-Quickbar");
+  const syncQuickbarWidth = () => {
+    if (!canvasFrame || !quickbar) return;
+    const w = canvasFrame.offsetWidth;
+    if (w > 0) {
+      quickbar.style.width = `${w}px`;
+    }
+  };
+  if (window.ResizeObserver && canvasFrame) {
+    const ro = new ResizeObserver(() => syncQuickbarWidth());
+    ro.observe(canvasFrame);
+  }
+  syncQuickbarWidth();
+
   const hasRustWasm = await tryLoadRustWasm();
   document.getElementById("engineHardwareHint").textContent =
     t("engine_hw_hint").replace("{n}", workerPool.numWorkers) +
@@ -1948,6 +1964,7 @@ async function init() {
     canvas.height = state.canvasSize;
     imageData = ctx.createImageData(state.canvasSize, state.canvasSize);
     rgbaU32 = new Uint32Array(imageData.data.buffer);
+    syncQuickbarWidth();
     renderFrame();
   });
 

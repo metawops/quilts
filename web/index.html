@@ -18,7 +18,7 @@
     <div class="brand">
       <span class="brand-badge">1996 → 2026</span>
       <div>
-        <h1>Quilts V2 <span class="version-badge" id="appVersion">0.4.0</span></h1>
+        <h1>Quilts V2 <span class="version-badge" id="appVersion">0.4.1</span></h1>
         <p class="subtitle"><span class="subtitle-tagline" data-i18n="tagline">Symmetric Chaos on the Torus · </span><span class="author-credits"><span data-i18n="author_prefix">von </span><a href="https://github.com/metawops" target="_blank" rel="noopener noreferrer" class="author-link">Stefan Wolfrum</a></span></p>
       </div>
     </div>
@@ -131,34 +131,40 @@
 
     <!-- Center: High-Speed 2D Pixel Canvas -->
     <section class="canvas-stage">
-      <div class="canvas-frame">
-        <canvas id="quiltCanvas" width="768" height="768"></canvas>
-      </div>
-      <div class="canvas-Quickbar">
-        <div class="quick-item">
-          <label for="selectResolution">Kachel-Auflösung:</label>
-          <select id="selectResolution" class="select-inline">
-            <option value="160">160×160 (Original DOS 1996)</option>
-            <option value="256">256×256</option>
-            <option value="384">384×384</option>
-            <option value="512">512×512 (HD)</option>
-            <option value="768" selected>768×768 (Ultra)</option>
-            <option value="1024">1024×1024 (Master)</option>
-            <option value="1440">1440×1440 (5K Nativ)</option>
-          </select>
+      <div class="canvas-wrapper">
+        <div class="canvas-frame">
+          <canvas id="quiltCanvas" width="768" height="768"></canvas>
         </div>
-        <div class="quick-item">
-          <label for="selectCanvasSize" data-i18n="canvas_size_label">Canvas:</label>
-          <select id="selectCanvasSize" class="select-inline">
-            <option value="600">600×600 px</option>
-            <option value="768" selected>768×768 px</option>
-            <option value="1024">1024×1024 px</option>
-          </select>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-small" id="btnExportPng" data-i18n="btn_export_png">📸 PNG speichern</button>
-          <button type="button" class="btn-small" id="btnExportTga" data-i18n="btn_export_tga" data-i18n-title="btn_export_tga_title" title="Originalgetreuer 8-Bit Color-Mapped Truevision TGA-Export wie 1996">💾 Original .TGA (1996)</button>
-          <button type="button" class="btn-small" id="btnExportQup" data-i18n="btn_export_qup">📄 .QUP speichern</button>
+        <div class="canvas-Quickbar">
+          <!-- Row 1: Resolution & Canvas Size Dropdowns -->
+          <div class="quick-row quick-row-selectors">
+            <div class="quick-item">
+              <label for="selectResolution" data-i18n="lbl_tile_resolution">Kachel-Auflösung:</label>
+              <select id="selectResolution" class="select-inline">
+                <option value="160">160×160 (Original DOS 1996)</option>
+                <option value="256">256×256</option>
+                <option value="384">384×384</option>
+                <option value="512">512×512 (HD)</option>
+                <option value="768" selected>768×768 (Ultra)</option>
+                <option value="1024">1024×1024 (Master)</option>
+                <option value="1440" data-i18n="opt_res_1440">1440×1440 (5K Nativ)</option>
+              </select>
+            </div>
+            <div class="quick-item">
+              <label for="selectCanvasSize" data-i18n="canvas_size_label">Canvas:</label>
+              <select id="selectCanvasSize" class="select-inline">
+                <option value="600">600×600 px</option>
+                <option value="768" selected>768×768 px</option>
+                <option value="1024">1024×1024 px</option>
+              </select>
+            </div>
+          </div>
+          <!-- Row 2: Export Action Buttons -->
+          <div class="quick-row quick-row-actions">
+            <button type="button" class="btn-small" id="btnExportPng" data-i18n="btn_export_png">📸 PNG speichern</button>
+            <button type="button" class="btn-small" id="btnExportTga" data-i18n="btn_export_tga" data-i18n-title="btn_export_tga_title" title="Originalgetreuer 8-Bit Color-Mapped Truevision TGA-Export wie 1996">💾 Original .TGA (1996)</button>
+            <button type="button" class="btn-small" id="btnExportQup" data-i18n="btn_export_qup">📄 .QUP speichern</button>
+          </div>
         </div>
       </div>
     </section>
@@ -703,7 +709,7 @@
       <section class="about-card">
         <div class="about-card-header">
           <h3 data-i18n="about_card8_title">⚖️ Lizenz &amp; Open Source</h3>
-          <span class="badge" data-i18n="about_card8_badge">MIT License · Version 0.4.0</span>
+          <span class="badge" data-i18n="about_card8_badge">MIT License · Version 0.4.1</span>
         </div>
         <p data-i18n-html="about_card8_text1">
           Quilts V2 ist freie Open-Source-Software und steht unter der <strong>MIT-Lizenz</strong>.

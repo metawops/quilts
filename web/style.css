@@ -637,6 +637,15 @@ input[type="range"] {
   gap: 0.75rem;
 }
 
+.canvas-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.65rem;
+}
+
 .canvas-frame {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -652,8 +661,7 @@ input[type="range"] {
 
 #quiltCanvas {
   display: block;
-  max-width: min(100%, 70dvh);
-  max-height: 70dvh;
+  max-width: 100%;
   width: auto;
   height: auto;
   aspect-ratio: 1 / 1;
@@ -670,16 +678,38 @@ input[type="range"] {
 
 .canvas-Quickbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.55rem;
   width: 100%;
-  max-width: 780px;
+  max-width: 100%;
+  box-sizing: border-box;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 0.5rem 0.85rem;
+  padding: 0.55rem 0.85rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.quick-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.quick-row-selectors {
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.quick-row-actions {
+  justify-content: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.quick-row-actions .btn-small {
+  white-space: nowrap;
 }
 
 .quick-item {
@@ -687,6 +717,7 @@ input[type="range"] {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.78rem;
+  white-space: nowrap;
 }
 
 .quick-actions {
