@@ -18,44 +18,51 @@
     <div class="brand">
       <span class="brand-badge">1996 → 2026</span>
       <div>
-        <h1>Quilts V2 <span class="version-badge" id="appVersion">0.3.6</span></h1>
-        <p class="subtitle"><span class="subtitle-tagline">Symmetric Chaos on the Torus · </span><a href="https://github.com/metawops" target="_blank" rel="noopener noreferrer" class="author-link">Stefan Wolfrum</a></p>
+        <h1>Quilts V2 <span class="version-badge" id="appVersion">0.4.0</span></h1>
+        <p class="subtitle"><span class="subtitle-tagline" data-i18n="tagline">Symmetric Chaos on the Torus · </span><span class="author-credits"><span data-i18n="author_prefix">von </span><a href="https://github.com/metawops" target="_blank" rel="noopener noreferrer" class="author-link">Stefan Wolfrum</a></span></p>
       </div>
     </div>
 
     <div class="telemetry-strip" aria-live="polite">
       <div class="metric">
-        <span class="metric-label">Iterationen</span>
+        <span class="metric-label" data-i18n="telemetry_iterations">Iterationen</span>
         <span class="metric-value" id="statIterations">0</span>
       </div>
       <div class="metric">
-        <span class="metric-label">Durchsatz</span>
+        <span class="metric-label" data-i18n="telemetry_throughput">Durchsatz</span>
         <span class="metric-value highlight" id="statThroughput">0.0 MIt/s</span>
       </div>
       <div class="metric">
-        <span class="metric-label">Max / Min Hits</span>
+        <span class="metric-label" data-i18n="telemetry_minmax">Max / Min Treffer</span>
         <span class="metric-value" id="statMinMax">0 / 0</span>
       </div>
       <div class="metric">
-        <span class="metric-label">Aktive Engine</span>
+        <span class="metric-label" data-i18n="telemetry_engine">Aktive Engine</span>
         <span class="metric-value" id="statEngineBadge">Auto-Detect</span>
       </div>
     </div>
 
     <div class="topbar-actions">
-      <button type="button" class="btn btn-primary" id="btnOpenWallpaperStudio" title="Ultra-HD Wallpaper Studio (Mac &amp; iPad)">
+      <button type="button" class="btn" id="btnOpenWallpaperStudio" data-i18n="btn_wallpaper" data-i18n-title="btn_wallpaper_title" title="Ultra-HD Wallpaper Studio (Mac &amp; iPad)">
         🖼 Wallpaper
       </button>
-      <button type="button" class="btn btn-accent" id="btnOpenBenchmark" title="Hardware Compute Benchmark-Arena">
+      <button type="button" class="btn" id="btnOpenBenchmark" data-i18n="btn_benchmark" data-i18n-title="btn_benchmark_title" title="Hardware Compute Benchmark-Arena">
         ⚡ Benchmark
       </button>
-      <button type="button" class="btn" id="btnOpenPaletteEditor" title="16×16 Fractint Paletten-Editor">
+      <button type="button" class="btn" id="btnOpenPaletteEditor" data-i18n="btn_palettes" data-i18n-title="btn_palettes_title" title="16×16 Fractint Paletten-Editor">
         🎨 Paletten
       </button>
+      <button type="button" class="btn" id="btnOpenAbout" data-i18n="btn_docs" data-i18n-title="btn_docs_title" title="Dokumentation: Über das Projekt &amp; Bedienungsanleitung (How to)">
+        📖 Doku
+      </button>
+      <div class="lang-switcher" role="group" aria-label="Language / Sprache">
+        <button type="button" class="lang-btn active" data-lang="de" title="Deutsch" aria-label="Deutsch">🇩🇪</button>
+        <button type="button" class="lang-btn" data-lang="en" title="English" aria-label="English">🇬🇧</button>
+      </div>
       <div class="theme-switcher" role="group" aria-label="Farbschema der Benutzungsoberfläche">
-        <button type="button" class="theme-btn" data-scheme="light" aria-label="Helles Design (Standard)" title="Helles Design (Standard)">☀️</button>
-        <button type="button" class="theme-btn" data-scheme="dark" aria-label="Dunkles Design" title="Dunkles Design">🌙</button>
-        <button type="button" class="theme-btn" data-scheme="light dark" aria-label="Systemeinstellung folgen" title="Systemeinstellung folgen">💻</button>
+        <button type="button" class="theme-btn" data-scheme="light" aria-label="Helles Design (Standard)" data-i18n-title="theme_light_title" title="Helles Design (Standard)">☀️</button>
+        <button type="button" class="theme-btn" data-scheme="dark" aria-label="Dunkles Design" data-i18n-title="theme_dark_title" title="Dunkles Design">🌙</button>
+        <button type="button" class="theme-btn" data-scheme="light dark" aria-label="Systemeinstellung folgen" data-i18n-title="theme_system_title" title="Systemeinstellung folgen">💻</button>
       </div>
     </div>
   </header>
@@ -65,30 +72,30 @@
     <aside class="panel panel-left">
       <section class="card">
         <div class="card-header">
-          <h2>Steuerung &amp; Hardware-Engine</h2>
+          <h2 data-i18n="card_engine_title">Steuerung &amp; Hardware-Engine</h2>
           <span class="status-pill" id="runStatusPill">RUNNING</span>
         </div>
         <div class="control-row button-grid">
-          <button type="button" class="btn btn-primary" id="btnToggleRun" title="Leertaste: Start / Stop">
+          <button type="button" class="btn btn-primary" id="btnToggleRun" data-i18n-html="btn_pause" data-i18n-title="btn_toggle_run_title" title="Leertaste: Start / Stop">
             ⏸ Pause <kbd>Space</kbd>
           </button>
-          <button type="button" class="btn" id="btnRestart" title="Taste R: Histogramm zurücksetzen">
-            ↺ Neustart <kbd>R</kbd>
+          <button type="button" class="btn" id="btnRestart" data-i18n-html="btn_restart" data-i18n-title="btn_restart_title" title="Taste R: Histogramm zurücksetzen">
+            🔄 Reset <kbd>R</kbd>
           </button>
         </div>
 
-        <label class="field-label" for="selectEngine">Rechen-Backend (Auto-Detection aktiv)</label>
+        <label class="field-label" for="selectEngine" data-i18n="lbl_engine_select">Compute-Engine &amp; Vektorisierung:</label>
         <select id="selectEngine" class="select-input">
-          <option value="workers">4. Multi-Core Web Worker Pool (Parallel)</option>
-          <option value="wasm">3. Rust / WebAssembly Kernel (Zero-Copy)</option>
-          <option value="fast">2. JS Branchless + Chebyshev Fast-Trig</option>
-          <option value="scalar1996">1. Pascal 1996 Referenz (Skalar 1:1)</option>
+          <option value="workers" data-i18n="opt_engine_workers">4. Multi-Core Web Worker Pool (Parallel)</option>
+          <option value="wasm" data-i18n="opt_engine_wasm">3. Rust / WebAssembly Kernel (Zero-Copy)</option>
+          <option value="fast" data-i18n="opt_engine_fast">2. JS Branchless + Chebyshev Fast-Trig</option>
+          <option value="scalar1996" data-i18n="opt_engine_scalar">1. Pascal 1996 Referenz (Skalar 1:1)</option>
         </select>
         <p class="hint" id="engineHardwareHint">Erkenne Hardware-Kerne…</p>
 
         <div class="slider-group">
           <div class="slider-header">
-            <label for="sliderBatch">Iterationen pro Frame-Batch</label>
+            <label for="sliderBatch" data-i18n="lbl_batch_size">Iterationen pro Frame-Batch</label>
             <output id="outBatch">500.000</output>
           </div>
           <input type="range" id="sliderBatch" min="50000" max="4000000" step="50000" value="500000" />
@@ -97,8 +104,8 @@
 
       <section class="card">
         <div class="card-header">
-          <h2>Historische Presets (.QUP, 1996)</h2>
-          <button type="button" class="btn-small" id="btnImportQup" title=".QUP Datei laden">Import</button>
+          <h2 data-i18n="card_presets_title">Historische Presets (.QUP, 1996)</h2>
+          <button type="button" class="btn-small" id="btnImportQup" data-i18n="btn_import_qup" data-i18n-title="btn_import_qup_title" title=".QUP Datei laden">Import</button>
           <input type="file" id="fileInputQup" accept=".qup,.QUP,.txt" hidden />
         </div>
         <select id="selectPreset" class="select-input" size="6" aria-label="Historische Parameterdateien aus Symmetry in Chaos"></select>
@@ -107,10 +114,12 @@
 
       <section class="card">
         <div class="card-header">
-          <h2>Symmetriegitter &amp; Parameter</h2>
-          <div class="segmented" role="radiogroup" aria-label="Quilt-Gittertyp">
-            <button type="button" class="seg-btn" id="btnTypeQuad" data-type="quad">Quad (𝔻₄/ℤ₄)</button>
-            <button type="button" class="seg-btn active" id="btnTypeHex" data-type="hex">Hex (𝔻₆/ℤ₆)</button>
+          <h2 data-i18n="card_params_title">Mathematische Attraktor-Parameter</h2>
+        </div>
+        <div class="symmetry-row">
+          <div class="segmented segmented-full" role="radiogroup" aria-label="Quilt-Gittertyp">
+            <button type="button" class="seg-btn" id="btnTypeQuad" data-type="quad" data-i18n="btn_type_quad" data-i18n-title="btn_type_quad_title" title="Quadratische Torus-Kachelung mit 4-zähliger D4-Symmetrie">4-fach Quad (𝔻₄)</button>
+            <button type="button" class="seg-btn active" id="btnTypeHex" data-type="hex" data-i18n="btn_type_hex" data-i18n-title="btn_type_hex_title" title="Hexagonale Torus-Kachelung mit 6-zähliger D6-Symmetrie">6-fach Hex (𝔻₆)</button>
           </div>
         </div>
 
@@ -139,7 +148,7 @@
           </select>
         </div>
         <div class="quick-item">
-          <label for="selectCanvasSize">Canvas:</label>
+          <label for="selectCanvasSize" data-i18n="canvas_size_label">Canvas:</label>
           <select id="selectCanvasSize" class="select-inline">
             <option value="600">600×600 px</option>
             <option value="768" selected>768×768 px</option>
@@ -147,10 +156,9 @@
           </select>
         </div>
         <div class="quick-actions">
-          <button type="button" class="btn-small" id="btnQuickWallpaper">🖼 Wallpaper Studio…</button>
-          <button type="button" class="btn-small" id="btnExportPng">📸 PNG speichern</button>
-          <button type="button" class="btn-small" id="btnExportTga" title="Originalgetreuer 8-Bit Color-Mapped Truevision TGA-Export wie 1996">💾 Original .TGA (1996)</button>
-          <button type="button" class="btn-small" id="btnExportQup">📄 .QUP speichern</button>
+          <button type="button" class="btn-small" id="btnExportPng" data-i18n="btn_export_png">📸 PNG speichern</button>
+          <button type="button" class="btn-small" id="btnExportTga" data-i18n="btn_export_tga" data-i18n-title="btn_export_tga_title" title="Originalgetreuer 8-Bit Color-Mapped Truevision TGA-Export wie 1996">💾 Original .TGA (1996)</button>
+          <button type="button" class="btn-small" id="btnExportQup" data-i18n="btn_export_qup">📄 .QUP speichern</button>
         </div>
       </div>
     </section>
@@ -159,27 +167,27 @@
     <aside class="panel panel-right">
       <section class="card">
         <div class="card-header">
-          <h2>Kachelung &amp; Dichte-Färbung</h2>
+          <h2 data-i18n="card_tiling_title">Kachelung &amp; Dichte-Färbung</h2>
         </div>
 
         <div class="slider-group">
           <div class="slider-header">
-            <label for="sliderPeriod">[n]period (Kachel-Wiederholung)</label>
+            <label for="sliderPeriod" data-i18n="lbl_periodic_tiling">Periodische Kachelung (n × n)</label>
             <output id="outPeriod">3 × 3</output>
           </div>
           <input type="range" id="sliderPeriod" min="1" max="10" step="1" value="3" />
         </div>
 
-        <label class="field-label" for="selectToneMapping">Farb-Mapping Modus</label>
+        <label class="field-label" for="selectToneMapping" data-i18n="lbl_tone_mapping">Tone-Mapping &amp; Dynamikkompression:</label>
         <select id="selectToneMapping" class="select-input">
-          <option value="log" selected>Logarithmisch HDR (Sanfte Dynamik)</option>
-          <option value="sqrt">Quadratwurzel + Gamma</option>
-          <option value="classic1996">Original 1996 (Linear Clamped ≤ 254)</option>
+          <option value="log" data-i18n="opt_tonemap_log" selected>1. Logarithmisch (HDR / log(1 + Hits))</option>
+          <option value="sqrt" data-i18n="opt_tonemap_sqrt">2. Quadratwurzel-Kompression (sqrt)</option>
+          <option value="classic1996" data-i18n="opt_tonemap_classic">3. Pascal 1996 Original (Clamping <= 254)</option>
         </select>
 
         <div class="slider-group">
           <div class="slider-header">
-            <label for="sliderGamma">Kontrast / Gamma</label>
+            <label for="sliderGamma" data-i18n="lbl_gamma">Gamma-Kompression (Kontrast)</label>
             <output id="outGamma">1.00</output>
           </div>
           <input type="range" id="sliderGamma" min="0.25" max="3.0" step="0.05" value="1.0" />
@@ -187,7 +195,7 @@
 
         <div class="slider-group">
           <div class="slider-header">
-            <label for="sliderLowBorder">lowBorder (Schwellenwert +/-)</label>
+            <label for="sliderLowBorder" data-i18n="lbl_low_border">Untere Farbschwelle (Low-Cutoff)</label>
             <output id="outLowBorder">0</output>
           </div>
           <input type="range" id="sliderLowBorder" min="0" max="100" step="1" value="0" />
@@ -195,7 +203,7 @@
 
         <div class="slider-group">
           <div class="slider-header">
-            <label for="sliderBlackIndex">blackIndex (&lt; / &gt; Ausblendung)</label>
+            <label for="sliderBlackIndex" data-i18n="lbl_black_index">Farbe 0 (Hintergrund-Farbe)</label>
             <output id="outBlackIndex">0</output>
           </div>
           <input type="range" id="sliderBlackIndex" min="0" max="253" step="1" value="0" />
@@ -203,23 +211,23 @@
 
         <div class="slider-group">
           <div class="slider-header">
-            <label for="sliderColorOffset">Paletten-Rotation (Offset)</label>
+            <label for="sliderColorOffset" data-i18n="lbl_cycle_speed">Rotations-Geschwindigkeit</label>
             <output id="outColorOffset">0</output>
           </div>
           <input type="range" id="sliderColorOffset" min="0" max="253" step="1" value="0" />
         </div>
         <label class="checkbox-row">
           <input type="checkbox" id="chkCycleColors" />
-          <span>Echtzeit-Farbrotation (Color Cycling)</span>
+          <span data-i18n="btn_cycle_start">Echtzeit-Farbrotation (Color Cycling)</span>
         </label>
       </section>
 
       <section class="card">
         <div class="card-header">
-          <h2>83 Fractint Paletten (.MAP)</h2>
+          <h2 data-i18n="card_palettes_title">83 Fractint Farbpaletten (.MAP)</h2>
           <span class="badge-subtle" id="activePaletteName">VOLCANO3</span>
         </div>
-        <input type="search" id="searchPalette" class="text-input" placeholder="Palette suchen (z.B. ROYAL, FIRE, STEFAN1)…" aria-label="Farbpalette suchen" />
+        <input type="search" id="searchPalette" class="text-input" data-i18n-ph="search_palette_ph" placeholder="Palette suchen…" aria-label="Farbpalette suchen" />
         <canvas id="paletteStripCanvas" width="256" height="20" class="palette-strip" title="Aktuelle 256-Farben-Palette"></canvas>
         <div id="paletteList" class="palette-list" role="listbox" aria-label="Verfügbare .MAP Farbpaletten"></div>
       </section>
@@ -230,8 +238,8 @@
   <dialog id="dialogBenchmark" closedby="any" aria-labelledby="benchDialogTitle">
     <div class="dialog-header">
       <div>
-        <h2 id="benchDialogTitle">⚡ Quilts Hardware- &amp; Technologie-Benchmark-Arena</h2>
-        <p class="dialog-subtitle">Vergleicht den Durchsatz (Millionen Iterationen pro Sekunde) für identische Attraktor-Parameter.</p>
+        <h2 id="benchDialogTitle" data-i18n="bench_title">⚡ Quilts Hardware- &amp; Technologie-Benchmark-Arena</h2>
+        <p class="dialog-subtitle" data-i18n="bench_subtitle">Vergleicht den Durchsatz (Millionen Iterationen pro Sekunde) für identische Attraktor-Parameter.</p>
       </div>
       <form method="dialog">
         <button value="close" class="btn-icon" aria-label="Dialog schließen">✕</button>
@@ -241,25 +249,25 @@
     <div class="dialog-body">
       <div class="bench-controls">
         <label>
-          Test-Umfang pro Engine:
+          <span data-i18n="bench_scope_label">Test-Umfang pro Engine:</span>
           <select id="benchIterationsSelect" class="select-inline">
-            <option value="5000000">5 Mio. Iterationen (Schnelltest)</option>
-            <option value="15000000" selected>15 Mio. Iterationen (Standard)</option>
-            <option value="40000000">40 Mio. Iterationen (Stresstest)</option>
+            <option value="5000000" data-i18n="bench_opt_5m">5 Mio. Iterationen (Schnelltest)</option>
+            <option value="15000000" data-i18n="bench_opt_15m" selected>15 Mio. Iterationen (Standard)</option>
+            <option value="40000000" data-i18n="bench_opt_40m">40 Mio. Iterationen (Stresstest)</option>
           </select>
         </label>
-        <button type="button" class="btn btn-primary" id="btnRunBenchmarkSuite" autofocus>
+        <button type="button" class="btn btn-primary" id="btnRunBenchmarkSuite" data-i18n="bench_btn_run" autofocus>
           ▶ Benchmark-Suite jetzt starten
         </button>
       </div>
 
       <div id="benchResultsContainer" class="bench-results">
-        <p class="bench-placeholder">Klicke auf „Benchmark-Suite jetzt starten“, um alle Engines live auf Deinem System zu vermessen.</p>
+        <p class="bench-placeholder" data-i18n="bench_placeholder">Klicke auf „Benchmark-Suite jetzt starten“, um alle Engines live auf Deinem System zu vermessen.</p>
       </div>
 
       <div class="native-comparison-note">
-        <h3>Hinweis zu den nativen Apple-Silicon-Engines (macOS / iPadOS / iOS &amp; CLI):</h3>
-        <p>
+        <h3 data-i18n="bench_native_title">Hinweis zu den nativen Apple-Silicon-Engines (macOS / iPadOS / iOS &amp; CLI):</h3>
+        <p data-i18n-html="bench_native_text">
           Neben diesen Browser-Engines enthält das Repository in <code>crates/quilts-core</code> und <code>apple/QuiltsNative</code>
           zusätzlich die nativen Engines (<strong>Swift + Apple Accelerate</strong>, <strong>Rust ARM64 NEON Intrinsics</strong>,
           <strong>Hand-Tuned ARM64 NEON Assembly (<code>frintm.4s</code> / <code>fmla.4s</code>)</strong> sowie den
@@ -270,7 +278,7 @@
 
     <div class="dialog-footer">
       <form method="dialog">
-        <button value="close" class="btn">Schließen</button>
+        <button value="close" class="btn" data-i18n="btn_close">Schließen</button>
       </form>
     </div>
   </dialog>
@@ -279,8 +287,8 @@
   <dialog id="dialogPaletteEditor" closedby="any" aria-labelledby="palEditTitle">
     <div class="dialog-header">
       <div>
-        <h2 id="palEditTitle">🎨 16×16 RGB-Paletten-Editor (wie 1996 in <code>colorEdit</code>)</h2>
-        <p class="dialog-subtitle">Klicke auf ein Farbfeld zum Bearbeiten. Markiere einen Startindex und interpoliere Verläufe (`=`).</p>
+        <h2 id="palEditTitle" data-i18n="pal_title">🎨 16×16 Fractint Paletten-Editor (256 Farben)</h2>
+        <p class="dialog-subtitle" data-i18n="pal_subtitle">RGB-Werte direkt bearbeiten oder Farbverläufe interpolieren wie im Original von 1996.</p>
       </div>
       <form method="dialog">
         <button value="close" class="btn-icon" aria-label="Paletten-Editor schließen">✕</button>
@@ -295,37 +303,37 @@
         <div class="pal-selected-info">
           <div class="color-swatch-large" id="palSwatchPreview"></div>
           <div>
-            <div>Aktiver Index: <strong id="palActiveIdxLabel">0</strong></div>
-            <div>Markierter Index: <strong id="palMarkedIdxLabel">–</strong></div>
+            <div><span data-i18n="pal_active_label">Aktiver Index:</span> <strong id="palActiveIdxLabel">0</strong></div>
+            <div><span data-i18n="pal_marked_label">Markierter Index:</span> <strong id="palMarkedIdxLabel">–</strong></div>
           </div>
         </div>
 
         <div class="slider-group">
-          <div class="slider-header"><label for="palSliderR">Rot (0–255)</label><output id="palOutR">0</output></div>
+          <div class="slider-header"><label for="palSliderR" data-i18n="pal_red">Rot (0–255)</label><output id="palOutR">0</output></div>
           <input type="range" id="palSliderR" min="0" max="255" value="0" />
         </div>
         <div class="slider-group">
-          <div class="slider-header"><label for="palSliderG">Grün (0–255)</label><output id="palOutG">0</output></div>
+          <div class="slider-header"><label for="palSliderG" data-i18n="pal_green">Grün (0–255)</label><output id="palOutG">0</output></div>
           <input type="range" id="palSliderG" min="0" max="255" value="0" />
         </div>
         <div class="slider-group">
-          <div class="slider-header"><label for="palSliderB">Blau (0–255)</label><output id="palOutB">0</output></div>
+          <div class="slider-header"><label for="palSliderB" data-i18n="pal_blue">Blau (0–255)</label><output id="palOutB">0</output></div>
           <input type="range" id="palSliderB" min="0" max="255" value="0" />
         </div>
 
         <div class="pal-action-grid">
-          <button type="button" class="btn" id="btnPalMark" autofocus>[Space] Markieren / Lösen</button>
-          <button type="button" class="btn" id="btnPalSpread">[=] Verlauf erzeugen (Spread)</button>
-          <button type="button" class="btn" id="btnPalCopy">[C] Markierte Farbe hierhin kopieren</button>
-          <button type="button" class="btn" id="btnPalSwap">[X] Mit markierter Farbe tauschen</button>
-          <button type="button" class="btn btn-primary" id="btnPalSaveMap">[S] Als .MAP Datei exportieren</button>
+          <button type="button" class="btn" id="btnPalMark" data-i18n="pal_btn_mark" autofocus>[Space] Markieren / Lösen</button>
+          <button type="button" class="btn" id="btnPalSpread" data-i18n="pal_btn_spread">[=] Verlauf erzeugen (Spread)</button>
+          <button type="button" class="btn" id="btnPalCopy" data-i18n="pal_btn_copy">[C] Markierte Farbe hierhin kopieren</button>
+          <button type="button" class="btn" id="btnPalSwap" data-i18n="pal_btn_swap">[X] Mit markierter Farbe tauschen</button>
+          <button type="button" class="btn btn-primary" id="btnPalSaveMap" data-i18n="pal_btn_save">[S] Als .MAP Datei exportieren</button>
         </div>
       </div>
     </div>
 
     <div class="dialog-footer">
       <form method="dialog">
-        <button value="close" class="btn">Fertig</button>
+        <button value="close" class="btn" data-i18n="pal_close">Fertig</button>
       </form>
     </div>
   </dialog>
@@ -334,8 +342,8 @@
   <dialog id="dialogWallpaper" closedby="any" aria-labelledby="wpDialogTitle">
     <div class="dialog-header">
       <div>
-        <h2 id="wpDialogTitle">🖼 Ultra-HD Wallpaper Studio (Mac &amp; iPad)</h2>
-        <p class="dialog-subtitle">
+        <h2 id="wpDialogTitle" data-i18n="wp_title">🖼 Ultra-HD Wallpaper Studio (Mac &amp; iPad)</h2>
+        <p class="dialog-subtitle" data-i18n="wp_subtitle">
           Erzeugt verzerrungsfreie, nahtlos gekachelte Hintergrundbilder für Mac-Monitore und iPads mit hochauflösendem Grundkachel-Histogramm und Subpixel-Glättung.
         </p>
       </div>
@@ -357,43 +365,42 @@
 
       <div class="wp-controls-grid">
         <div class="wp-col">
-          <label class="field-label" for="wpSelectPresetSize">Ziel-Gerät &amp; Ausgabeformat</label>
+          <label class="field-label" for="wpSelectPresetSize" data-i18n="wp_target_label">Ziel-Gerät &amp; Ausgabeformat</label>
           <select id="wpSelectPresetSize" class="select-input">
-            <optgroup label="🖥 Mac &amp; Desktop-Monitore">
+            <optgroup label="🖥 Mac &amp; Desktop-Monitore" data-i18n-label="wp_grp_mac">
               <option value="dual5k_split" selected>🖥🖥 Dual 5K Split: 2× 5120×2880 PNG (Links + Rechts nahtlos)</option>
               <option value="5k">🖥 Single 5K Studio Display: 5120×2880 PNG (16:9 · 14,7 MP)</option>
               <option value="dual5k_single">🖥🖥 Dual 5K Panorama: 10240×2880 PNG (32:9 · 29,5 MP)</option>
               <option value="6k">🖥 Apple 6K Pro Display XDR: 6016×3384 PNG (16:9 · 20,4 MP)</option>
               <option value="4k">🖥 4K UHD Monitor: 3840×2160 PNG (16:9 · 8,3 MP)</option>
             </optgroup>
-            <optgroup label="📱 Apple iPad">
+            <optgroup label="📱 Apple iPad" data-i18n-label="wp_grp_ipad">
               <option value="ipad_pro13">📱 iPad Pro 13" (M4) &amp; 12.9": 2752×2064 PNG (4:3 · 5,7 MP)</option>
               <option value="ipad_air11">📱 iPad Air 11" &amp; 10.9": 2360×1640 PNG (~1.44:1 · 3,9 MP)</option>
               <option value="ipad_pro11">📱 iPad Pro 11": 2420×1668 PNG (~1.45:1 · 4,0 MP)</option>
               <option value="ipad_mini">📱 iPad mini 8.3": 2266×1488 PNG (~1.52:1 · 3,4 MP)</option>
             </optgroup>
-            <optgroup label="🖼 Kunstdruck">
+            <optgroup label="🖼 Kunstdruck" data-i18n-label="wp_grp_art">
               <option value="square4k">🖼 Quadratischer Kunstdruck: 4096×4096 PNG (1:1 · 16,8 MP)</option>
             </optgroup>
           </select>
 
-          <label class="field-label" for="wpSelectSourceMode">Datenquelle &amp; Belichtungs-Abgleich</label>
+          <label class="field-label" for="wpSelectSourceMode" data-i18n="wp_src_label">Berechnungsquelle &amp; Detailgrad</label>
           <select id="wpSelectSourceMode" class="select-input">
-            <option value="live" selected>✨ Aktuelles Live-Histogramm direkt nutzen (Sofort-Export · 100 % identische Farben!)</option>
-            <option value="recompute_matched">🔬 Neu berechnen in 1440×1440 + Farbbereich an Live-Bild anpassen</option>
-            <option value="recompute_raw">🧪 Neu berechnen (Roh-Belichtung ohne Abgleich)</option>
+            <option value="live" data-i18n="wp_opt_live" selected>1. Live-Histogramm direkt übernehmen (Echtzeit-Export, 0 s)</option>
+            <option value="recompute_matched" data-i18n="wp_opt_hd">2. Ultra-HD Histogramm neu berechnen (Höchste Schärfe)</option>
           </select>
 
-          <label class="field-label" for="wpSelectTileRes">Grundkachel-Auflösung (bei Neuberechnung)</label>
+          <label class="field-label" for="wpSelectTileRes" data-i18n="wp_tileres_label">Grundkachel-Auflösung (Detailgrad)</label>
           <select id="wpSelectTileRes" class="select-input">
-            <option value="1024">1024 × 1024 px pro Einzelkachel</option>
-            <option value="1440" selected>1440 × 1440 px pro Einzelkachel (1:1 Nativ für 5K bei 2× Höhe!)</option>
-            <option value="2048">2048 × 2048 px pro Einzelkachel (Maximales Studio-Supersampling)</option>
+            <option value="1024">1024 × 1024 px</option>
+            <option value="1440" selected>1440 × 1440 px (5K Nativ)</option>
+            <option value="2048">2048 × 2048 px (Studio-Supersampling)</option>
           </select>
 
-          <label class="field-label" for="wpSelectIterations">Iterations-Tiefe (bei Neuberechnung)</label>
+          <label class="field-label" for="wpSelectIterations" data-i18n="wp_iters_label">Iterations-Tiefe für Ultra-HD</label>
           <select id="wpSelectIterations" class="select-input">
-            <option value="50000000">50 Mio. Iterationen (~2 Sek. auf M4 Pro)</option>
+            <option value="50000000">50 Mio. Iterationen</option>
             <option value="150000000" selected>150 Mio. Iterationen (Empfohlen)</option>
             <option value="400000000">400 Mio. Iterationen (Ultra-Deep HDR)</option>
             <option value="1000000000">1 Milliarde Iterationen (Referenz)</option>
@@ -403,7 +410,7 @@
         <div class="wp-col">
           <div class="slider-group">
             <div class="slider-header">
-              <label for="wpSliderPeriodY">Vertikale Kachel-Anzahl (Symmetrie-Maßstab)</label>
+              <label for="wpSliderPeriodY" data-i18n="wp_period_label">Vertikale Kachel-Anzahl (Symmetrie-Maßstab)</label>
               <output id="wpOutPeriodY">2.00</output>
             </div>
             <input type="range" id="wpSliderPeriodY" min="0.5" max="6.0" step="0.25" value="2.0" />
@@ -411,7 +418,7 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <label for="wpSliderPhaseX">Horizontaler Phasen-Versatz (X-Zentrierung)</label>
+              <label for="wpSliderPhaseX" data-i18n="wp_phasex_label">Horizontaler Phasen-Versatz (X-Zentrierung)</label>
               <output id="wpOutPhaseX">0.00</output>
             </div>
             <input type="range" id="wpSliderPhaseX" min="0.0" max="1.0" step="0.01" value="0.0" />
@@ -419,7 +426,7 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <label for="wpSliderPhaseY">Vertikaler Phasen-Versatz (Y-Zentrierung)</label>
+              <label for="wpSliderPhaseY" data-i18n="wp_phasey_label">Vertikaler Phasen-Versatz (Y-Zentrierung)</label>
               <output id="wpOutPhaseY">0.00</output>
             </div>
             <input type="range" id="wpSliderPhaseY" min="0.0" max="1.0" step="0.01" value="0.0" />
@@ -427,7 +434,7 @@
 
           <label class="checkbox-row">
             <input type="checkbox" id="wpChkBilinear" checked />
-            <span>Bilineare Subpixel-Glättung (Anti-Aliasing) aktivieren</span>
+            <span data-i18n="wp_bilinear_label">Bilineare Subpixel-Glättung (Anti-Aliasing) aktivieren</span>
           </label>
         </div>
       </div>
@@ -445,11 +452,395 @@
 
     <div class="dialog-footer wp-footer">
       <form method="dialog">
-        <button value="close" class="btn">Abbrechen</button>
+        <button value="close" class="btn" data-i18n="wp_cancel">Abbrechen</button>
       </form>
-      <button type="button" class="btn btn-primary" id="btnStartWallpaperRender" autofocus>
+      <button type="button" class="btn btn-primary" id="btnStartWallpaperRender" data-i18n="wp_render_btn" autofocus>
         🚀 Ultra-HD Wallpaper jetzt rendern &amp; herunterladen
       </button>
+    </div>
+  </dialog>
+
+  <!-- Documentation Modal: About & How to ... (History, Chaos Mathematics, Licenses, Guide & AI Attribution) -->
+  <dialog id="dialogAbout" closedby="any" aria-labelledby="aboutDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <h2 id="aboutDialogTitle" data-i18n="docs_title">Dokumentation · Quilts V2</h2>
+        <div class="dialog-tabs" role="tablist" aria-label="Dokumentation">
+          <button type="button" class="tab-btn active" id="tabBtnAbout" data-tab="tabAbout" role="tab" aria-selected="true" data-i18n="tab_about">About</button>
+          <button type="button" class="tab-btn" id="tabBtnHowto" data-tab="tabHowto" role="tab" aria-selected="false" data-i18n="tab_howto">How to ...</button>
+        </div>
+      </div>
+      <form method="dialog">
+        <button value="close" class="btn-icon" aria-label="Schließen" title="Schließen">✕</button>
+      </form>
+    </div>
+
+    <div class="dialog-body about-body">
+      <!-- Tab 1: About (History, Mathematics, Fractint Rights, AI Co-Authorship) -->
+      <div id="tabPanelAbout" class="tab-panel active" role="tabpanel" aria-labelledby="tabBtnAbout">
+        <!-- Section 1: History -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card1_title">🕰️ 30 Jahre Historie: Von MS-DOS 1996 zum modernen Web 2026</h3>
+          <span class="badge" data-i18n="about_card1_badge">1996 → 2026</span>
+        </div>
+        <p data-i18n-html="about_card1_text1">
+          Das originale <strong>Quilts</strong> wurde im <strong>März 1996</strong> von <strong>Stefan Wolfrum</strong>
+          in Borland Turbo Pascal 7.0 für MS-DOS programmiert (<code>QUILTS.PAS</code>). Zur damaligen Ära der Intel 486-
+          und frühen Pentium-Rechner lief die Berechnung im VGA-Modus 13h (320×200 Pixel) oder VESA Super-VGA (640×480 Pixel)
+          mit einer festen Farbtiefe von 256 Farben aus 18-Bit-VGA-DAC-Registern.
+        </p>
+        <p data-i18n-html="about_card1_text2">
+          Exakt 30 Jahre später wurde der originale Quelltext von einer archivierten 3,5″-Diskette gerettet und als moderne,
+          plattformunabhängige Web- und WebAssembly-Anwendung von Grund auf neu implementiert.
+        </p>
+        <p data-i18n-html="about_card1_text3">
+          <strong>Volle Rückwärtskompatibilität:</strong> Deine originalen <code>.QUP</code>-Parameterdateien von 1996 können
+          über die Schaltfläche <em>„Import“</em> (im Bereich der historischen Presets) 1:1 geladen und über die
+          Schaltfläche <em>„📄 .QUP speichern“</em> (unterhalb der Zeichenfläche) jederzeit wieder exportiert werden.
+          Ebenso ist der originale, unkomprimierte 8-Bit Truevision TGA-Export (<code>saveTGA</code>) mit eingebetteter
+          Farbtabelle direkt im Browser verfügbar.
+        </p>
+      </section>
+
+      <!-- Section 2: Mathematical Background -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card2_title">📐 Mathematischer Hintergrund: Symmetrie im Chaos</h3>
+          <span class="badge" data-i18n="about_card2_badge">Dynamische Systeme &amp; Torus 𝕋²</span>
+        </div>
+        <p data-i18n-html="about_card2_intro">
+          Quilts simuliert diskrete, nichtlineare dynamische Systeme auf dem zweidimensionalen Torus
+          <code>𝕋² = ℝ² / ℤ²</code>. Die mathematische Magie entsteht durch die Verknüpfung von deterministischem Chaos
+          mit diskreten ebenen kristallographischen Raumgruppen:
+        </p>
+        <ul class="about-list">
+          <li>
+            <span data-i18n-html="about_card2_quad">
+              <strong>Quadratische Kachelung (Typ Quad):</strong> Basiert auf der Raumgruppe <code>p4m</code>
+              (Punktgruppensymmetrie <code>𝔻₄</code>). Die quadratische Einheitskachel besitzt eine 4-zählige Rotationssymmetrie
+              (90°-Drehungen) und vier Spiegelebenen (horizontal, vertikal und beide Diagonalen).
+            </span>
+          </li>
+          <li>
+            <span data-i18n-html="about_card2_hex">
+              <strong>Hexagonale Kachelung (Typ Hex):</strong> Basiert auf der Raumgruppe <code>p6m</code>
+              (Punktgruppensymmetrie <code>𝔻₆</code> auf einem Dreiecksgitter mit Basisvektoren unter 60°/120°).
+              Sie weist eine 6-zählige Rotationssymmetrie und sechs Spiegelebenen auf.
+            </span>
+          </li>
+        </ul>
+        <p data-i18n-html="about_card2_ergodic">
+          <strong>Ergodizität &amp; Dichte-Histogramm:</strong> Die Iterationsvorschrift verknüpft polynomiale
+          Nichtlinearitäten mit periodischen Fourier- und Chebyshev-Harmonischen. Ein einzelner Startpunkt
+          <code>(x₀, y₀)</code> durchläuft hunderte Millionen Iterationen. Ein hochauflösendes 2D-Akkumulations-Histogramm
+          zählt, wie häufig die Trajektorie jede Zelle des Phasenraums trifft (ergodische Aufenthaltswahrscheinlichkeit).
+        </p>
+        <p data-i18n-html="about_card2_hdr">
+          <strong>Logarithmisches HDR Tone-Mapping:</strong> Da die Trefferhäufigkeiten Dynamikbereiche von über
+          <code>10⁷ : 1</code> umspannen können, transformiert ein logarithmisches Mapping <code>log(1 + Hits)</code>
+          bzw. eine Quadratwurzel-Kompression mit einstellbarem Gamma-Wert die Rohdaten stufenlos in die 256 Palettenfarben.
+        </p>
+      </section>
+
+      <!-- Section 3: Scientific Literature & Papers -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card3_title">📚 Wissenschaftliche Literatur &amp; Primärquellen</h3>
+          <span class="badge" data-i18n="about_card3_badge">Field &amp; Golubitsky (1990/1992)</span>
+        </div>
+        <p data-i18n-html="about_card3_intro">
+          Die mathematischen Grundlagen und Algorithmen gehen auf die Forschungsarbeiten von
+          <strong>Michael Field</strong> und <strong>Martin Golubitsky</strong> zurück:
+        </p>
+        <ul class="about-list">
+          <li>
+            <strong>Michael Field &amp; Martin Golubitsky (1992):</strong>
+            <span data-i18n-html="about_card3_book"><em>Symmetry in Chaos: A Search for Pattern in Mathematics, Art and Nature</em>.
+            Oxford University Press (2. Auflage 2009 bei SIAM, ISBN 978-0-898716-72-6).</span>
+            <br>
+            <a href="https://epubs.siam.org/doi/book/10.1137/1.9780898717709" target="_blank" rel="noopener noreferrer" class="about-link" data-i18n="about_card3_siam_link">
+              🔗 Offizieller SIAM E-Books Eintrag (DOI: 10.1137/1.9780898717709)
+            </a>
+          </li>
+          <li>
+            <strong>Mike Field &amp; Martin Golubitsky (1990):</strong>
+            <span data-i18n-html="about_card3_paper"><em>Symmetric Chaos: A pictorial exploration of an order imposed by symmetry within chaotic systems</em>.
+            In: <em>Computers in Physics</em>, Vol. 4, No. 5 (Sep/Oct 1990), S. 470–479 (American Institute of Physics).</span>
+            <br>
+            <a href="https://doi.org/10.1063/1.4822939" target="_blank" rel="noopener noreferrer" class="about-link" data-i18n="about_card3_paper_link">
+              🔗 AIP Publishing Journal (DOI: 10.1063/1.4822939)
+            </a>
+          </li>
+          <li>
+            <strong>Michael Field &amp; Martin Golubitsky (1992):</strong>
+            <span data-i18n-html="about_card3_sciam"><em>Symmetric Chaos</em>. In: <em>Scientific American</em>, Vol. 267, No. 6, S. 86–92.
+            Deutsche Übersetzung: <em>Symmetrisches Chaos</em>, in: <em>Spektrum der Wissenschaft</em>, Februar 1993, S. 56–64.</span>
+            <br>
+            <a href="https://doi.org/10.1038/scientificamerican1292-86" target="_blank" rel="noopener noreferrer" class="about-link">
+              🔗 Scientific American DOI: 10.1038/scientificamerican1292-86
+            </a>
+          </li>
+          <li>
+            <strong>Ian Stewart (1992):</strong>
+            <span data-i18n-html="about_card3_stewart"><em>Fearful Symmetry: Is God a Geometer?</em>. Blackwell Publishers / Penguin Books.</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Section 4: Fractint Palettes & Licenses -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card4_title">🎨 Die 83 Fractint-Paletten (.MAP) &amp; Urheberrechte</h3>
+          <span class="badge" data-i18n="about_card4_badge">Stone Soup Group (1988–2000)</span>
+        </div>
+        <p data-i18n-html="about_card4_text1">
+          Die in Quilts V2 enthaltenen <strong>83 Farbpaletten</strong> (Dateiformat <code>.MAP</code> mit 256 RGB-Farbtriplets)
+          stammen aus dem legendären Fraktal-Grafikprogramm <strong>Fractint</strong> der <em>Stone Soup Group</em>
+          (u. a. Bert Tyler, Timothy Wegner, Mark Peterson, Pieter Branderhorst).
+        </p>
+        <p data-i18n-html="about_card4_text2">
+          Fractint war in den 1990er-Jahren der weltweite De-facto-Standard für Fraktal- und Chaossimulationen auf dem PC.
+          Zahllose Enthusiasten und Fraktalkünstler aus der globalen Community steuerten damals eigene Farbtabellen als
+          gemeinnützige Freeware bei.
+        </p>
+        <p data-i18n-html="about_card4_text3">
+          <strong>Urheberrechts- und Lizenzhinweis:</strong> Diese historischen Farbpaletten werden in Quilts V2 zu
+          Dokumentations-, Bildungs- und Nostalgiezwecken zur Verfügung gestellt, um das visuelle Erscheinungsbild von
+          1996 getreu und unverfälscht erlebbar zu machen. Sämtliche Urheberrechte an den individuellen Farbgradienten
+          verbleiben bei den ursprünglichen Urhebern der Stone Soup Group bzw. den damaligen Beitragsleistenden.
+          Sollte ein Rechteinhaber Einwände gegen die Aufnahme einer bestimmten Farbpalette haben, bitten wir um einen
+          kurzen Hinweis über das GitHub-Repository zur sofortigen Entfernung.
+        </p>
+      </section>
+
+      <!-- Section 5: AI Assistance & Gemini -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card5_title">🤖 KI-Unterstützung &amp; Google Gemini</h3>
+          <span class="badge" data-i18n="about_card5_badge">Entwicklung mit Google Gemini</span>
+        </div>
+        <p data-i18n-html="about_card5_intro">
+          Quilts V2 entstand im Oktober 2026 als persönliches Projekt von <strong>Stefan Wolfrum</strong> mit
+          Unterstützung von <strong>Google Gemini</strong> (Google DeepMind) in der agentischen Entwicklungsumgebung
+          <strong>Google Antigravity</strong>:
+        </p>
+        <ul class="about-list">
+          <li>
+            <span data-i18n-html="about_card5_stefan">
+              <strong>Stefan Wolfrum</strong> (<a href="https://github.com/metawops" target="_blank" rel="noopener noreferrer" class="about-link">@metawops</a>):
+              Idee, mathematische Konzeption, Original-Implementierung 1996 in Borland Turbo Pascal (<code>QUILTS.PAS</code>),
+              Gestaltung der Benutzungsoberfläche, Kuration historischer Presets &amp; Paletten und Weiterentwicklung.
+            </span>
+          </li>
+          <li>
+            <span data-i18n-html="about_card5_gemini">
+              <strong>Google Gemini</strong> (Google DeepMind):
+              KI-Pair-Programming via Google Antigravity. Dekodierung und Analyse des 16-Bit Real-Mode Pascal-Codes,
+              mathematische Formalisierung der hexagonalen Dreiecks-Kachelung und bilinearen Subpixel-Interpolation,
+              Entwicklung der hochoptimierten Rust / WebAssembly SIMD128-Engine, skalierbare Web-Worker-Multithreading-Architektur,
+              Ultra-HD Wallpaper Studio mit CDF-Quantil-Matching sowie responsive Web-Benutzungsoberfläche.
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Section 6: Architecture & Performance -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card6_title">🚀 Moderne Web-Architektur &amp; Rechenleistung</h3>
+          <span class="badge" data-i18n="about_card6_badge">&gt; 100 MIt/s · IEEE-754 f64</span>
+        </div>
+        <ul class="about-list">
+          <li>
+            <span data-i18n-html="about_card6_li1">
+              <strong>Paralleles Multi-Threading:</strong> Skalierbarer Web-Worker-Pool, der sich automatisch an die
+              vorhandene CPU-Kernanzahl Deines Geräts anpasst (<code>navigator.hardwareConcurrency</code>).
+            </span>
+          </li>
+          <li>
+            <span data-i18n-html="about_card6_li2">
+              <strong>Hardwarenahe Performance:</strong> Erreicht über <strong>100 Millionen Iterationen pro Sekunde</strong>
+              auf modernen Multi-Core-Prozessoren (z. B. Apple Silicon M4 Pro).
+            </span>
+          </li>
+          <li>
+            <span data-i18n-html="about_card6_li3">
+              <strong>Höchste numerische Präzision (64-Bit Float):</strong> Durchgängige Berechnung in IEEE-754 64-Bit
+              Doppelpräzision (<code>f64</code>) im Rust-Wasm-Kern wie in JavaScript garantiert mathematische Langzeitstabilität
+              und verhindert Attraktor-Kollapse selbst bei Milliarden Iterationen.
+            </span>
+          </li>
+          <li>
+            <span data-i18n-html="about_card6_li4">
+              <strong>Ultra-HD Wallpaper Studio:</strong> Ermöglicht nahtlose Renderings für Single-5K (5120×2880 px),
+              Dual-5K (10240×2880 px) und iPad Pro/Air mit Quantile-Histogramm-Matching und bilinearer Kantenglättung.
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Section 7: Shortcuts & Privacy -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card7_title">⌨️ Tastatur-Kurzbefehle &amp; Datenschutz</h3>
+          <span class="badge" data-i18n="about_card7_badge">100 % Client-Side · Keine Tracker</span>
+        </div>
+        <div class="about-shortcuts-grid">
+          <div><kbd>Space</kbd> <span data-i18n="about_card7_sc_space">Simulation starten / anhalten</span></div>
+          <div><kbd>R</kbd> <span data-i18n="about_card7_sc_r">Histogramm zurücksetzen &amp; Neustart</span></div>
+          <div><kbd>T</kbd> <span data-i18n="about_card7_sc_t">Symmetrie umschalten (Quad ↔ Hex)</span></div>
+          <div><kbd>+</kbd> / <kbd>-</kbd> <span data-i18n="about_card7_sc_plus">Untere Farbschwelle (Low-Cutoff) anpassen</span></div>
+          <div><kbd>Esc</kbd> <span data-i18n="about_card7_sc_esc">Aktives Dialogfenster schließen</span></div>
+        </div>
+        <p class="about-privacy-note" data-i18n-html="about_card7_privacy">
+          🔒 <strong>Datenschutz:</strong> Quilts V2 arbeitet zu 100 % lokal in Deinem Browser. Es werden keinerlei
+          Cookies, Analysewerkzeuge, Werbetracker oder Server-Datenbanken verwendet. Deine Rechenpower gehört Dir!
+        </p>
+      </section>
+
+      <!-- Section 8: License & Project Links -->
+      <section class="about-card">
+        <div class="about-card-header">
+          <h3 data-i18n="about_card8_title">⚖️ Lizenz &amp; Open Source</h3>
+          <span class="badge" data-i18n="about_card8_badge">MIT License · Version 0.4.0</span>
+        </div>
+        <p data-i18n-html="about_card8_text1">
+          Quilts V2 ist freie Open-Source-Software und steht unter der <strong>MIT-Lizenz</strong>.
+          <br>
+          Copyright © 1996, 2026 Stefan Wolfrum.
+        </p>
+        <p data-i18n="about_card8_text2">
+          Quellcode, Dokumentation und Issues findest Du öffentlich auf GitHub:
+        </p>
+        <p>
+          <a href="https://github.com/metawops/quilts" target="_blank" rel="noopener noreferrer" class="about-link">
+            🐙 github.com/metawops/quilts
+          </a>
+        </p>
+      </section>
+      </div>
+
+      <!-- Tab 2: How to ... (User Manual, Control Elements & Mathematical Explanations) -->
+      <div id="tabPanelHowto" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnHowto" hidden>
+        <!-- Howto Card 1: Quickstart & Principle -->
+        <section class="about-card">
+          <div class="about-card-header">
+            <h3 data-i18n="howto_c1_title">🌟 Grundprinzip &amp; Schnelleinstieg</h3>
+            <span class="badge" data-i18n="howto_c1_badge">Chaotische Attraktoren</span>
+          </div>
+          <p data-i18n-html="howto_c1_intro">
+            Quilts berechnet <strong>symmetrische chaotische Attraktoren</strong> auf einem zweidimensionalen Torus (einer periodisch in sich geschlossenen Fläche). Ein mathematischer Punkt springt dabei unaufhörlich von Koordinate zu Koordinate. Ein hochauflösendes 2D-Gitter zählt im Hintergrund mit, wie oft jede Zelle getroffen wird (Ergodizität). Je öfter ein Pixel getroffen wird, desto heller bzw. intensiver wird es eingefärbt.
+          </p>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c1_step1"><strong>1. Preset auswählen:</strong> Wähle in der linken Leiste ein historisches Preset (z. B. <code>ABB2_6</code> oder <code>VOLCANO3</code>), um ein erprobtes Muster zu laden.</li>
+            <li data-i18n-html="howto_c1_step2"><strong>2. Simulation steuern:</strong> Mit der <kbd>Leertaste</kbd> startest und pausierst Du die Berechnung. Mit <kbd>R</kbd> setzt Du das Bild zurück.</li>
+            <li data-i18n-html="howto_c1_step3"><strong>3. Farbwelten entdecken:</strong> Klicke rechts auf eine der 83 Fractint-Paletten, um die Farbgebung in Echtzeit zu verändern.</li>
+            <li data-i18n-html="howto_c1_step4"><strong>4. Symmetrie wechseln:</strong> Wechsle mit <kbd>T</kbd> zwischen quadratischer (Quad, 4-zählig) und dreieckig-hexagonaler (Hex, 6-zählig) Symmetrie.</li>
+          </ul>
+        </section>
+
+        <!-- Howto Card 2: Controls & Engines -->
+        <section class="about-card">
+          <div class="about-card-header">
+            <h3 data-i18n="howto_c2_title">⚙️ Steuerung &amp; Hardware-Rechenkerne</h3>
+            <span class="badge" data-i18n="howto_c2_badge">Multi-Core &amp; Vektorisierung</span>
+          </div>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c2_btn_run"><strong>Start / Pause (<kbd>Space</kbd>):</strong> Startet oder stoppt den Rechenprozess. Auch bei Pause bleibt das Bild vollständig erhalten und kann frei eingefärbt oder exportiert werden.</li>
+            <li data-i18n-html="howto_c2_btn_reset"><strong>Reset / Neustart (<kbd>R</kbd>):</strong> Löscht das Treffer-Histogramm und beginnt eine frische Trajektorie mit dem aktuellen Startwert.</li>
+          </ul>
+          <p data-i18n-html="howto_c2_engine_desc"><strong>Rechen-Backends (Compute Engines):</strong></p>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c2_eng_workers">• <strong>Multi-Core Web Worker Pool:</strong> Verteilt die mathematischen Iterationen auf alle CPU-Kerne Deines Geräts. Ideal für maximale Performance (&gt; 100 bis 250+ MIt/s).</li>
+            <li data-i18n-html="howto_c2_eng_wasm">• <strong>Rust / WebAssembly Kernel:</strong> Hochoptimierter Wasm-Kern mit SIMD128-Vektorisierung und minimaler Latenz.</li>
+            <li data-i18n-html="howto_c2_eng_fast">• <strong>JS Branchless Fast-Trig:</strong> Verzweigungsfreie JavaScript-Berechnung mit schneller Chebyshev-Trigonometrie.</li>
+            <li data-i18n-html="howto_c2_eng_scalar">• <strong>Pascal 1996 Skalar:</strong> Die historische 1:1-Referenzberechnung aus Turbo Pascal mit Standard-Trigonometrie.</li>
+          </ul>
+          <p data-i18n-html="howto_c2_batch_desc"><strong>Iterationen pro Frame-Batch:</strong> Bestimmt, wie viele Iterationen die Worker zwischen zwei Bildschirmanzeigen berechnen. Höhere Werte steigern den Gesamtdurchsatz, während kleinere Werte eine noch feinfühligere Schieberegler-Reaktion ermöglichen.</p>
+        </section>
+
+        <!-- Howto Card 3: Grids & Presets -->
+        <section class="about-card">
+          <div class="about-card-header">
+            <h3 data-i18n="howto_c3_title">📐 Symmetriegitter &amp; Historische Presets</h3>
+            <span class="badge" data-i18n="howto_c3_badge">Quad (p4m) &amp; Hex (p6m)</span>
+          </div>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c3_quad"><strong>Quadratisches Gitter (Quad, 𝔻₄ / p4m):</strong> Kachelt den Torus auf einem rechtwinkligen Quadrat. Weist eine 4-fache Drehsymmetrie (90°) und 4 Spiegellinien (horizontal, vertikal, Diagonalen) auf.</li>
+            <li data-i18n-html="howto_c3_hex"><strong>Hexagonales Gitter (Hex, 𝔻₆ / p6m):</strong> Basiert auf einem gleichseitigen Dreiecksgitter mit 60°/120°-Winkeln. Weist eine 6-fache Drehsymmetrie und 6 Spiegellinien auf.</li>
+            <li data-i18n-html="howto_c3_presets"><strong>Historische Presets (.QUP):</strong> Enthält alle 21 Originalkonfigurationen aus dem Buch <em>Symmetry in Chaos</em> von Field &amp; Golubitsky.</li>
+            <li data-i18n-html="howto_c3_import"><strong>Import-Funktion:</strong> Erlaubt das Einlesen von originalen <code>.QUP</code>-Dateien von 1996 sowie selbst erstellten Parametern.</li>
+          </ul>
+        </section>
+
+        <!-- Howto Card 4: Mathematical Parameters -->
+        <section class="about-card">
+          <div class="about-card-header">
+            <h3 data-i18n="howto_c4_title">🎛️ Die mathematischen Parameter im Detail</h3>
+            <span class="badge" data-i18n="howto_c4_badge">Formel-Einfluss</span>
+          </div>
+          <p data-i18n-html="howto_c4_intro">Die Formel kombiniert polynomiale Nichtlinearität mit trigonometrischer Fourier-Rückkopplung. Jeder Regler verändert das Verhalten der Chaostrajektorie grundlegend:</p>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c4_lambda">• <strong>λ (Lambda):</strong> Grund-Skalierung und linearer Expansions-/Dämpfungsfaktor. Bestimmt die grundlegende Ausdehnung des Attraktors im Raum. Ein zu hoher Wert lässt den Attraktor explodieren (Divergenz), ein zu kleiner lässt ihn zu einem einzelnen Punkt zusammenfallen.</li>
+            <li data-i18n-html="howto_c4_alpha">• <strong>α (Alpha):</strong> Quadratischer Term proportional zu <code>|z|²</code>. Erzeugt kreisförmige Krümmungen, Verbiegungen und ringförmige Schalen.</li>
+            <li data-i18n-html="howto_c4_beta">• <strong>β (Beta):</strong> Höherer harmonischer Term mit <code>Re(zⁿ)</code>. Koppelt die Trajektorie an die Symmetrieachsen der Grundzelle ($n=4$ bei Quad, $n=6$ bei Hex) und prägt die strahlenförmigen Hauptäste aus.</li>
+            <li data-i18n-html="howto_c4_gamma">• <strong>γ (Gamma):</strong> Konjugierter harmonischer Rückkopplungsterm (<code>z̄ⁿ⁻¹</code>). Erzeugt hochkomplexe, filigrane Schleifen, Falten und fraktale Schlaufen.</li>
+            <li data-i18n-html="howto_c4_omega">• <strong>ω (Omega):</strong> Rotations- und Chiralitäts-Parameter. Ist &omega; = 0, ist das Muster streng achsensymmetrisch (𝔻<sub>n</sub>). Ist &omega; &ne; 0, wird die Spiegelsymmetrie gebrochen (ℤ<sub>n</sub>) und es entstehen spektakuläre Wirbel, Strudel und Spiralen!</li>
+            <li data-i18n-html="howto_c4_shift">• <strong>Shift:</strong> Phasenverschiebung der periodischen Fourier-Harmonischen. Verschiebt die Symmetriezentren innerhalb der Torus-Kachel.</li>
+            <li data-i18n-html="howto_c4_ma">• <strong>ma (nur Quad):</strong> Harmonischer Multiplikator der Fourier-Wellenlänge im Einheitsquadrat.</li>
+            <li data-i18n-html="howto_c4_ab">• <strong>a &amp; b (nur Hex):</strong> Geometrische Gitterfaktoren des hexagonalen Dreiecksgitters (Standard: $a=0.5, b=\sqrt{3}/2 \approx 0.866$).</li>
+            <li data-i18n-html="howto_c4_reset">• <strong>↺ Standardwerte:</strong> Setzt alle mathematischen Parameter auf die stabilen, harmonischen Buch-Referenzwerte der gewählten Symmetrie zurück.</li>
+          </ul>
+        </section>
+
+        <!-- Howto Card 5: Tiling, Tone-Mapping & Palettes -->
+        <section class="about-card">
+          <div class="about-card-header">
+            <h3 data-i18n="howto_c5_title">🎨 Kachelung, Farb-Mapping &amp; Paletten</h3>
+            <span class="badge" data-i18n="howto_c5_badge">HDR-Tone-Mapping &amp; Farbspiel</span>
+          </div>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c5_period"><strong>[n]period (Kachel-Wiederholung n × n):</strong> Bestimmt, wie oft die Torus-Grundzelle horizontal und vertikal auf der Zeichenfläche gekachelt wird. Da die Kanten nahtlos ineinander übergehen, entstehen faszinierende Mosaikmuster.</li>
+          </ul>
+          <p data-i18n-html="howto_c5_tonemap"><strong>Farb-Mapping Modus (Tone-Mapping):</strong></p>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c5_tm_log">• <strong>Logarithmisch HDR (Empfohlen):</strong> Verwendet <code>log(1 + Treffer)</code>. Macht sowohl schwach besuchte Außenbereiche als auch extrem dichte Zentren gleichzeitig brillant sichtbar.</li>
+            <li data-i18n-html="howto_c5_tm_sqrt">• <strong>Quadratwurzel (sqrt):</strong> Sanftere Dynamikkompression für besonders kontrastreiche Farbabstufungen.</li>
+            <li data-i18n-html="howto_c5_tm_classic">• <strong>Original 1996:</strong> Bildet Treffer direkt auf die Palette ab (Clamping bei 254) – exakt wie auf VGA-Röhrenmonitoren 1996.</li>
+          </ul>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c5_gamma"><strong>Kontrast / Gamma:</strong> Steuert die Helligkeitskurve. Kleinere Werte heben Schatten an, größere Werte machen dunkle Zonen tiefer.</li>
+            <li data-i18n-html="howto_c5_lowborder"><strong>lowBorder (Schwellenwert +/-):</strong> Blendet Pixel aus, die seltener als dieser Schwellenwert getroffen wurden. Ideal, um Rauschen zu entfernen und den Hintergrund tiefschwarz zu halten.</li>
+            <li data-i18n-html="howto_c5_blackidx"><strong>blackIndex:</strong> Legt fest, welche Palettenfarbe als Hintergrundfarbe gerendert wird.</li>
+            <li data-i18n-html="howto_c5_cycling"><strong>Farbrotation (Color Cycling):</strong> Rotiert die 256 Palettenfarben fortlaufend durch. Ein ikonischer Effekt der 90er-Demoszene, der ganz ohne Neuberechnung des Attraktors für fließende Bewegung sorgt.</li>
+            <li data-i18n-html="howto_c5_editor"><strong>16×16 Paletten-Editor:</strong> Erlaubt das freie Bearbeiten einzelner Farbindizes, das weiche Interpolieren von Farbverläufen (<code>[=] Spread</code>) und den Export eigener <code>.MAP</code>-Dateien.</li>
+          </ul>
+        </section>
+
+        <!-- Howto Card 6: Wallpaper Studio & Exports -->
+        <section class="about-card">
+          <div class="about-card-header">
+            <h3 data-i18n="howto_c6_title">🖼️ Wallpaper Studio &amp; Export-Möglichkeiten</h3>
+            <span class="badge" data-i18n="howto_c6_badge">Ultra-HD &amp; Retro-Formate</span>
+          </div>
+          <ul class="about-list">
+            <li data-i18n-html="howto_c6_png"><strong>📸 PNG speichern:</strong> Lädt das aktuelle quadratische Bild verlustfrei als PNG-Datei herunter.</li>
+            <li data-i18n-html="howto_c6_tga"><strong>💾 Original .TGA (1996):</strong> Erzeugt eine echte 8-Bit Truevision TGA-Datei mit eingebetteter 256-Farben-Palette – exakt so wie <code>saveTGA</code> in MS-DOS 1996.</li>
+            <li data-i18n-html="howto_c6_qup"><strong>📄 .QUP speichern:</strong> Sichert Deine aktuellen mathematischen Parameter in einer Textdatei, die Du jederzeit wieder importieren kannst.</li>
+            <li data-i18n-html="howto_c6_studio"><strong>🖼 Ultra-HD Wallpaper Studio:</strong> Rendert gigantische Hintergrundbilder für 5K-Displays (5120×2880 px), Dual-5K Setups (10240×2880 px für zwei Monitore) sowie iPad Pro und Kunstdrucke. Dank Quantil-Histogramm-Matching und bilinearer Kantenglättung bleibt der Farbcharakter Deines Live-Bildes perfekt erhalten!</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="dialog-footer about-footer">
+      <a href="https://github.com/metawops/quilts" target="_blank" rel="noopener noreferrer" class="btn" data-i18n="about_btn_github">
+        🐙 GitHub Repository öffnen
+      </a>
+      <form method="dialog">
+        <button value="close" class="btn btn-primary" data-i18n="about_btn_close" autofocus>Fertig / Schließen</button>
+      </form>
     </div>
   </dialog>
 

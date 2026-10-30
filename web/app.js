@@ -1,6 +1,7 @@
 // Quilts V2 (1996 -> 2026) – High-Speed Web Application & Multi-Backend Arena
-export const APP_VERSION = "0.3.6";
+export const APP_VERSION = "0.4.0";
 import { QUILTS_CATALOG } from "./assets-data.js";
+import { t, getLang, setLanguage } from "./i18n.js";
 
 // --- 1. Fallback for <dialog closedby="any"> in Safari (from modern-web-guidance) ---
 if (!("closedBy" in HTMLDialogElement.prototype)) {
@@ -849,10 +850,10 @@ function updateTelemetryDOM() {
     `${state.maxHit.toLocaleString("de-DE")} / ${state.minHit}`;
 
   const engineLabels = {
-    workers: `Multi-Worker (${workerPool.numWorkers} Kerne)`,
-    wasm: state.wasmInstance ? "Rust Wasm SIMD" : "Chebyshev Fast-Wasm",
-    fast: "JS Branchless Fast-Trig",
-    scalar1996: "Pascal 1996 Skalar",
+    workers: t("engine_badge_workers").replace("{n}", workerPool.numWorkers),
+    wasm: state.wasmInstance ? t("engine_badge_wasm") : t("engine_badge_wasm_fallback"),
+    fast: t("engine_badge_fast"),
+    scalar1996: t("engine_badge_scalar"),
   };
   document.getElementById("statEngineBadge").textContent = engineLabels[state.engine];
 }
@@ -1555,7 +1556,6 @@ function initWallpaperStudio() {
   };
 
   document.getElementById("btnOpenWallpaperStudio").addEventListener("click", openStudio);
-  document.getElementById("btnQuickWallpaper").addEventListener("click", openStudio);
 
   document.getElementById("btnStartWallpaperRender").addEventListener("click", async () => {
     const btn = document.getElementById("btnStartWallpaperRender");
@@ -1721,8 +1721,64 @@ function initWallpaperStudio() {
   });
 }
 
+// --- 13. Documentation Modal Dialog (About & How to ...) ---
+function initAboutDialog() {
+  const dialog = document.getElementById("dialogAbout");
+  const btn = document.getElementById("btnOpenAbout");
+  if (!dialog || !btn) return;
 
-// --- 13. Theme Switcher (Light default + Dark + System, persisted in localStorage) ---
+  btn.addEventListener("click", () => {
+    dialog.showModal();
+  });
+
+  // Explicit close handler on all close buttons
+  dialog.querySelectorAll("button[value='close']").forEach((b) => {
+    b.addEventListener("click", () => {
+      dialog.close();
+    });
+  });
+
+  // Tab switching logic (About <-> How to ...)
+  const tabBtns = dialog.querySelectorAll(".dialog-tabs .tab-btn");
+  const panelAbout = document.getElementById("tabPanelAbout");
+  const panelHowto = document.getElementById("tabPanelHowto");
+
+  tabBtns.forEach((tabBtn) => {
+    tabBtn.addEventListener("click", () => {
+      const target = tabBtn.dataset.tab;
+      tabBtns.forEach((b) => {
+        const isActive = b === tabBtn;
+        b.classList.toggle("active", isActive);
+        b.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+
+      if (panelAbout && panelHowto) {
+        if (target === "tabHowto") {
+          panelAbout.hidden = true;
+          panelHowto.hidden = false;
+        } else {
+          panelAbout.hidden = false;
+          panelHowto.hidden = true;
+        }
+      }
+    });
+  });
+
+  // Close when clicking directly on the backdrop outside the dialog card
+  dialog.addEventListener("click", (e) => {
+    const rect = dialog.getBoundingClientRect();
+    const isInDialog =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width;
+    if (!isInDialog) {
+      dialog.close();
+    }
+  });
+}
+
+// --- 14. Theme Switcher (Light default + Dark + System, persisted in localStorage) ---
 function initThemeSwitcher() {
   const meta = document.querySelector('meta[name="color-scheme"]');
   const buttons = document.querySelectorAll(".theme-btn");
@@ -1755,8 +1811,38 @@ function initThemeSwitcher() {
   syncButtons();
 }
 
-// --- 14. Main Initialization ---
+// --- 15. Language Switcher (German / English i18n, persisted in localStorage) ---
+function initLanguageSwitcher() {
+  const currentLang = getLang();
+  setLanguage(currentLang);
+
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const lang = btn.dataset.lang;
+      setLanguage(lang);
+      updateTelemetryDOM();
+    });
+  });
+
+  window.addEventListener("quilts-language-changed", () => {
+    updateTelemetryDOM();
+    const btnRun = document.getElementById("btnToggleRun");
+    if (btnRun) {
+      btnRun.innerHTML = state.running ? t("btn_pause") : t("btn_resume");
+    }
+    const hasRustWasm = !!state.wasmInstance;
+    const hintEl = document.getElementById("engineHardwareHint");
+    if (hintEl) {
+      hintEl.textContent =
+        t("engine_hw_hint").replace("{n}", workerPool.numWorkers) +
+        (hasRustWasm ? t("engine_hw_hint_wasm") : "");
+    }
+  });
+}
+
+// --- 16. Main Initialization ---
 async function init() {
+  initLanguageSwitcher();
   initThemeSwitcher();
   populatePresets();
   buildParameterSliders();
@@ -1765,18 +1851,19 @@ async function init() {
   initPaletteEditor();
   initBenchmarkArena();
   initWallpaperStudio();
+  initAboutDialog();
 
   const hasRustWasm = await tryLoadRustWasm();
   document.getElementById("engineHardwareHint").textContent =
-    `Hardware erkannt: ${workerPool.numWorkers} parallele Worker-Threads aktiv` +
-    (hasRustWasm ? " · Rust Wasm geladen" : "");
+    t("engine_hw_hint").replace("{n}", workerPool.numWorkers) +
+    (hasRustWasm ? t("engine_hw_hint_wasm") : "");
 
   // Wire top-level controls
   const btnRun = document.getElementById("btnToggleRun");
   const pill = document.getElementById("runStatusPill");
   const toggleRun = () => {
     state.running = !state.running;
-    btnRun.innerHTML = state.running ? "⏸ Pause <kbd>Space</kbd>" : "▶ Weiter <kbd>Space</kbd>";
+    btnRun.innerHTML = state.running ? t("btn_pause") : t("btn_resume");
     pill.textContent = state.running ? "RUNNING" : "PAUSED";
     pill.classList.toggle("paused", !state.running);
   };

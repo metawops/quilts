@@ -10,6 +10,17 @@ Periodische chaotische Attraktoren (*„Symmetric Quilts“*) und symmetrische A
 
 ---
 
+## 👤 Autor & KI-Unterstützung
+
+Quilts wurde von Stefan Wolfrum entwickelt, mit KI-Unterstützung durch Google Gemini:
+
+- **Stefan Wolfrum** ([@metawops](https://github.com/metawops))  
+  *Idee, mathematische Konzeption, Original-Implementierung 1996 in Borland Turbo Pascal (`QUILTS.PAS`), UI-Design, Kuration historischer Presets & Paletten und Weiterentwicklung.*
+- **Google Gemini** (Google DeepMind)  
+  *KI-Pair-Programming via Google Antigravity: Dekodierung des 16-Bit Pascal-Codes, mathematische Formalisierung der Hexagonal-Kachelung, Rust/Wasm SIMD128-Engine, Web-Worker-Multithreading, Ultra-HD Wallpaper Studio und Web-Benutzungsoberfläche.*
+
+---
+
 ## Persönliche Historie: März 1996 bis heute
 
 Im **März 1996** entstand die ursprüngliche Version dieses Programms – **`QUILTS.PAS` (Quilts V1.1)** – in **Borland Turbo Pascal** unter **MS-DOS**. Inspiriert durch das Buch *Symmetry in Chaos* (dt. *Chaotische Symmetrien*) von Michael Field und Martin Golubitsky war das Ziel, die darin beschriebenen periodischen Torus-Attraktoren („Quilts“) selbst zu berechnen, interaktiv zu erforschen und hochauflösend einzufärben.
@@ -168,6 +179,22 @@ Sowohl das von Field & Golubitsky entwickelte Programmpaket *Prism* (`iter` & `d
 
 ---
 
+## Fractint-Paletten & Urheberrechte
+
+Die im Projekt enthaltenen **83 Farbtabellen** (Dateiformat `.MAP` mit jeweils 256 RGB-Farbtriplets) stammen aus dem legendären Fraktalprogramm **Fractint** der *Stone Soup Group* (Bert Tyler, Timothy Wegner, Mark Peterson, Pieter Branderhorst u. a., 1988–2000). Sie wurden in den 1990er-Jahren von Enthusiasten der weltweiten Fraktal-Community als Freeware beigesteuert.
+
+Die Paletten werden in Quilts V2 zu reinen Dokumentations-, Bildungs- und Nostalgiezwecken bereitgestellt, um das historische visuelle Erscheinungsbild von 1996 originalgetreu wiederzubeleben. Sämtliche Urheberrechte an den individuellen Farbgradienten verbleiben bei den jeweiligen ursprünglichen Autoren.
+
+---
+
+## KI-Pair-Programming mit Google Gemini
+
+Quilts V2 entstand im Oktober 2026 im intensiven Pair-Programming zwischen **Stefan Wolfrum** und **Google Gemini** (Google DeepMind) in der agentischen Entwicklungsumgebung **Google Antigravity**.
+
+Von der Rekonstruktion des historischen 16-Bit Real-Mode Pascal-Codes (`QUILTS.PAS`) über die mathematische Formulierung der hexagonalen Kachelung und bilinearen Subpixel-Glättung bis hin zur hochoptimierten SIMD128-Vektorisierung in Rust/WebAssembly, Multithreading-Architektur mit Web Workern und der interaktiven Web-Benutzungsoberfläche wurde das gesamte System kollaborativ entworfen, implementiert und getestet.
+
+---
+
 ## Lizenz
 
-Dieses Projekt steht unter der **MIT License** – siehe [`LICENSE`](LICENSE) für Details (`Copyright (c) 1996-2026 Stefan Wolfrum`).
+Dieses Projekt steht unter der **MIT License** – siehe [`LICENSE`](LICENSE) für Details (`Copyright (c) 1996, 2026 Stefan Wolfrum`).
