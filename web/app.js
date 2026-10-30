@@ -1,5 +1,4 @@
 // Quilts V2 (1996 -> 2026) – High-Speed Web Application & Multi-Backend Arena
-export const APP_VERSION = "0.4.2";
 import { QUILTS_CATALOG } from "./assets-data.js";
 import { t, getLang, setLanguage } from "./i18n.js";
 
@@ -1919,10 +1918,31 @@ function initLanguageSwitcher() {
   });
 }
 
+async function loadAppVersion() {
+  try {
+    const res = await fetch("version.json");
+    if (!res.ok) return;
+    const data = await res.json();
+    const ver = data.version || data.tag;
+    if (ver) {
+      const badge = document.getElementById("appVersion");
+      if (badge) {
+        badge.textContent = ver;
+        badge.hidden = false;
+      }
+      const aboutBadge = document.getElementById("aboutVersionBadge");
+      if (aboutBadge) {
+        aboutBadge.textContent = `MIT License · v${ver.replace(/^v/, "")}`;
+      }
+    }
+  } catch (_) {}
+}
+
 // --- 16. Main Initialization ---
 async function init() {
   initLanguageSwitcher();
   initThemeSwitcher();
+  loadAppVersion();
   populatePresets();
   buildParameterSliders();
   drawPaletteStrip();

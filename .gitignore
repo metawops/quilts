@@ -9,3 +9,6 @@ apple/QuiltsNative/.swiftpm/
 
 # macOS system files
 .DS_Store
+
+# Generated web version artifact (created dynamically by git hook from git tag)
+web/version.json

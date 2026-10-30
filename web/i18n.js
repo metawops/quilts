@@ -230,7 +230,7 @@ export const I18N = {
     about_card7_privacy: "🔒 <strong>Datenschutz:</strong> Quilts V2 arbeitet zu 100 % lokal in Deinem Browser. Es werden keinerlei Cookies, Analysewerkzeuge, Werbetracker oder Server-Datenbanken verwendet. Deine Rechenpower gehört Dir!",
 
     about_card8_title: "⚖️ Lizenz & Open Source",
-    about_card8_badge: "MIT License · Version 0.4.2",
+    about_card8_badge: "MIT License",
     about_card8_text1: "Quilts V2 ist freie Open-Source-Software und steht unter der <strong>MIT-Lizenz</strong>.<br>Copyright © 1996, 2026 Stefan Wolfrum.",
     about_card8_text2: "Quellcode, Dokumentation und Issues findest Du öffentlich auf GitHub:",
     about_btn_github: "🐙 GitHub Repository öffnen",
@@ -550,7 +550,7 @@ export const I18N = {
     about_card7_privacy: "🔒 <strong>Privacy:</strong> Quilts V2 operates 100% locally in your browser. No cookies, analytics, trackers, or remote databases are used. Your computing power belongs to you!",
 
     about_card8_title: "⚖️ License & Open Source",
-    about_card8_badge: "MIT License · Version 0.4.2",
+    about_card8_badge: "MIT License",
     about_card8_text1: "Quilts V2 is free open-source software distributed under the <strong>MIT License</strong>.<br>Copyright © 1996, 2026 Stefan Wolfrum.",
     about_card8_text2: "Source code, documentation, and issues are publicly available on GitHub:",
     about_btn_github: "🐙 Open GitHub Repository",
