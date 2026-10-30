@@ -9,6 +9,9 @@ echo "🚀 Deploye Quilts V2 auf Strato VPS (quilts.wops.de)..."
 # SSH-Optionen um RemoteCommand/tmux fuer automatisierte Befehle zu deaktivieren
 SSH_OPTS="-o RemoteCommand=none -o RequestTTY=no"
 
+# Versionsdatei vor dem Sync aus aktuellem Git-Tag generieren
+"$ROOT_DIR/scripts/update-version.sh"
+
 rsync -avz --exclude '.DS_Store' -e "ssh $SSH_OPTS" "$ROOT_DIR/web/" vps:/var/www/quilts.wops.de/
 
 echo "✅ Deployment erfolgreich abgeschlossen!"
