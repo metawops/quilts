@@ -146,7 +146,7 @@ in das schiefwinklige Fundamentalgebiet $[0, 1)^2$, reduziert modulo $1$ und pro
 
 Neben den Torus-Abbildungen beschreibt das Paper *Symmetric Chaos* (Field & Golubitsky, 1990) auch die Familie der $\mathbb{D}_n$- und $\mathbb{Z}_n$-äquivarianten Abbildungen in der komplexen Ebene $\mathbb{C}$ (mit $u = z\bar{z} = |z|^2$ und $v = z^n$):
 
-$$f(z) = \bigl(\lambda + \alpha u + \beta \operatorname{Re}(v) + \omega i\bigr)z + \gamma \bar{z}^{n-1} + \delta \bigl(\operatorname{Re}((z/|z|)^n)\bigr)^p \frac{z}{|z|}$$
+$$f(z) = \bigl(\lambda + \alpha u + \beta \mathrm{Re}(v) + \omega i\bigr)z + \gamma \bar{z}^{n-1} + \delta \bigl(\mathrm{Re}((z/|z|)^n)\bigr)^p \frac{z}{|z|}$$
 
 - Für $\omega = 0$ und $\delta = 0$ ergibt sich die klassische polynomiale $\mathbb{D}_n$-Familie (Gleichung 1a).
 - Für $\omega \neq 0$ wird die Spiegelsymmetrie zu $\mathbb{Z}_n$ gebrochen (Gleichung 1c).

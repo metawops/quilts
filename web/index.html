@@ -862,10 +862,10 @@
           </ul>
           <p data-i18n-html="howto_c2_engine_desc"><strong>Rechen-Backends (Compute Engines):</strong></p>
           <ul class="about-list">
-            <li data-i18n-html="howto_c2_eng_workers">• <strong>Multi-Core Web Worker Pool:</strong> Verteilt die mathematischen Iterationen auf alle CPU-Kerne Deines Geräts. Ideal für maximale Performance (&gt; 100 bis 250+ MIt/s).</li>
-            <li data-i18n-html="howto_c2_eng_wasm">• <strong>Rust / WebAssembly Kernel:</strong> Hochoptimierter Wasm-Kern mit SIMD128-Vektorisierung und minimaler Latenz.</li>
-            <li data-i18n-html="howto_c2_eng_fast">• <strong>JS Branchless Fast-Trig:</strong> Verzweigungsfreie JavaScript-Berechnung mit schneller Chebyshev-Trigonometrie.</li>
-            <li data-i18n-html="howto_c2_eng_scalar">• <strong>Pascal 1996 Skalar:</strong> Die historische 1:1-Referenzberechnung aus Turbo Pascal mit Standard-Trigonometrie.</li>
+            <li data-i18n-html="howto_c2_eng_workers"><strong>Multi-Core Web Worker Pool:</strong> Verteilt die mathematischen Iterationen auf alle CPU-Kerne Deines Geräts. Ideal für maximale Performance (&gt; 100 bis 250+ MIt/s).</li>
+            <li data-i18n-html="howto_c2_eng_wasm"><strong>Rust / WebAssembly Kernel:</strong> Hochoptimierter Wasm-Kern mit SIMD128-Vektorisierung und minimaler Latenz.</li>
+            <li data-i18n-html="howto_c2_eng_fast"><strong>JS Branchless Fast-Trig:</strong> Verzweigungsfreie JavaScript-Berechnung mit schneller Chebyshev-Trigonometrie.</li>
+            <li data-i18n-html="howto_c2_eng_scalar"><strong>Pascal 1996 Skalar:</strong> Die historische 1:1-Referenzberechnung aus Turbo Pascal mit Standard-Trigonometrie.</li>
           </ul>
           <p data-i18n-html="howto_c2_batch_desc"><strong>Iterationen pro Frame-Batch:</strong> Bestimmt, wie viele Iterationen die Worker zwischen zwei Bildschirmanzeigen berechnen. Höhere Werte steigern den Gesamtdurchsatz, während kleinere Werte eine noch feinfühligere Schieberegler-Reaktion ermöglichen.</p>
         </section>
@@ -892,15 +892,15 @@
           </div>
           <p data-i18n-html="howto_c4_intro">Die Formel kombiniert polynomiale Nichtlinearität mit trigonometrischer Fourier-Rückkopplung. Jeder Regler verändert das Verhalten der Chaostrajektorie grundlegend:</p>
           <ul class="about-list">
-            <li data-i18n-html="howto_c4_lambda">• <strong>λ (Lambda):</strong> Grund-Skalierung und linearer Expansions-/Dämpfungsfaktor. Bestimmt die grundlegende Ausdehnung des Attraktors im Raum. Ein zu hoher Wert lässt den Attraktor explodieren (Divergenz), ein zu kleiner lässt ihn zu einem einzelnen Punkt zusammenfallen.</li>
-            <li data-i18n-html="howto_c4_alpha">• <strong>α (Alpha):</strong> Quadratischer Term proportional zu <code>|z|²</code>. Erzeugt kreisförmige Krümmungen, Verbiegungen und ringförmige Schalen.</li>
-            <li data-i18n-html="howto_c4_beta">• <strong>β (Beta):</strong> Höherer harmonischer Term mit <code>Re(zⁿ)</code>. Koppelt die Trajektorie an die Symmetrieachsen der Grundzelle ($n=4$ bei Quad, $n=6$ bei Hex) und prägt die strahlenförmigen Hauptäste aus.</li>
-            <li data-i18n-html="howto_c4_gamma">• <strong>γ (Gamma):</strong> Konjugierter harmonischer Rückkopplungsterm (<code>z̄ⁿ⁻¹</code>). Erzeugt hochkomplexe, filigrane Schleifen, Falten und fraktale Schlaufen.</li>
-            <li data-i18n-html="howto_c4_omega">• <strong>ω (Omega):</strong> Rotations- und Chiralitäts-Parameter. Ist &omega; = 0, ist das Muster streng achsensymmetrisch (𝔻<sub>n</sub>). Ist &omega; &ne; 0, wird die Spiegelsymmetrie gebrochen (ℤ<sub>n</sub>) und es entstehen spektakuläre Wirbel, Strudel und Spiralen!</li>
-            <li data-i18n-html="howto_c4_shift">• <strong>Shift:</strong> Phasenverschiebung der periodischen Fourier-Harmonischen. Verschiebt die Symmetriezentren innerhalb der Torus-Kachel.</li>
-            <li data-i18n-html="howto_c4_ma">• <strong>ma (nur Quad):</strong> Harmonischer Multiplikator der Fourier-Wellenlänge im Einheitsquadrat.</li>
-            <li data-i18n-html="howto_c4_ab">• <strong>a &amp; b (nur Hex):</strong> Geometrische Gitterfaktoren des hexagonalen Dreiecksgitters (Standard: $a=0.5, b=\sqrt{3}/2 \approx 0.866$).</li>
-            <li data-i18n-html="howto_c4_reset">• <strong>↺ Standardwerte:</strong> Setzt alle mathematischen Parameter auf die stabilen, harmonischen Buch-Referenzwerte der gewählten Symmetrie zurück.</li>
+            <li data-i18n-html="howto_c4_lambda"><strong>λ (Lambda):</strong> Grund-Skalierung und linearer Expansions-/Dämpfungsfaktor. Bestimmt die grundlegende Ausdehnung des Attraktors im Raum. Ein zu hoher Wert lässt den Attraktor explodieren (Divergenz), ein zu kleiner lässt ihn zu einem einzelnen Punkt zusammenfallen.</li>
+            <li data-i18n-html="howto_c4_alpha"><strong>α (Alpha):</strong> Quadratischer Term proportional zu <code>|z|²</code>. Erzeugt kreisförmige Krümmungen, Verbiegungen und ringförmige Schalen.</li>
+            <li data-i18n-html="howto_c4_beta"><strong>β (Beta):</strong> Höherer harmonischer Term mit <code>Re(zⁿ)</code>. Koppelt die Trajektorie an die Symmetrieachsen der Grundzelle (n = 4 bei Quad, n = 6 bei Hex) und prägt die strahlenförmigen Hauptäste aus.</li>
+            <li data-i18n-html="howto_c4_gamma"><strong>γ (Gamma):</strong> Konjugierter harmonischer Rückkopplungsterm (<code>z̄ⁿ⁻¹</code>). Erzeugt hochkomplexe, filigrane Schleifen, Falten und fraktale Schlaufen.</li>
+            <li data-i18n-html="howto_c4_omega"><strong>ω (Omega):</strong> Rotations- und Chiralitäts-Parameter. Ist &omega; = 0, ist das Muster streng achsensymmetrisch (𝔻<sub>n</sub>). Ist &omega; &ne; 0, wird die Spiegelsymmetrie gebrochen (ℤ<sub>n</sub>) und es entstehen spektakuläre Wirbel, Strudel und Spiralen!</li>
+            <li data-i18n-html="howto_c4_shift"><strong>Shift:</strong> Phasenverschiebung der periodischen Fourier-Harmonischen. Verschiebt die Symmetriezentren innerhalb der Torus-Kachel.</li>
+            <li data-i18n-html="howto_c4_ma"><strong>ma (nur Quad):</strong> Harmonischer Multiplikator der Fourier-Wellenlänge im Einheitsquadrat.</li>
+            <li data-i18n-html="howto_c4_ab"><strong>a &amp; b (nur Hex):</strong> Geometrische Gitterfaktoren des hexagonalen Dreiecksgitters (Standard: <em>a</em> = 0,5, <em>b</em> = √3 / 2 ≈ 0,866).</li>
+            <li data-i18n-html="howto_c4_reset"><strong>↺ Standardwerte:</strong> Setzt alle mathematischen Parameter auf die stabilen, harmonischen Buch-Referenzwerte der gewählten Symmetrie zurück.</li>
           </ul>
         </section>
 
@@ -915,9 +915,9 @@
           </ul>
           <p data-i18n-html="howto_c5_tonemap"><strong>Farb-Mapping Modus (Tone-Mapping):</strong></p>
           <ul class="about-list">
-            <li data-i18n-html="howto_c5_tm_log">• <strong>Logarithmisch HDR (Empfohlen):</strong> Verwendet <code>log(1 + Treffer)</code>. Macht sowohl schwach besuchte Außenbereiche als auch extrem dichte Zentren gleichzeitig brillant sichtbar.</li>
-            <li data-i18n-html="howto_c5_tm_sqrt">• <strong>Quadratwurzel (sqrt):</strong> Sanftere Dynamikkompression für besonders kontrastreiche Farbabstufungen.</li>
-            <li data-i18n-html="howto_c5_tm_classic">• <strong>Original 1996:</strong> Bildet Treffer direkt auf die Palette ab (Clamping bei 254) – exakt wie auf VGA-Röhrenmonitoren 1996.</li>
+            <li data-i18n-html="howto_c5_tm_log"><strong>Logarithmisch HDR (Empfohlen):</strong> Verwendet <code>log(1 + Treffer)</code>. Macht sowohl schwach besuchte Außenbereiche als auch extrem dichte Zentren gleichzeitig brillant sichtbar.</li>
+            <li data-i18n-html="howto_c5_tm_sqrt"><strong>Quadratwurzel (sqrt):</strong> Sanftere Dynamikkompression für besonders kontrastreiche Farbabstufungen.</li>
+            <li data-i18n-html="howto_c5_tm_classic"><strong>Original 1996:</strong> Bildet Treffer direkt auf die Palette ab (Clamping bei 254) – exakt wie auf VGA-Röhrenmonitoren 1996.</li>
           </ul>
           <ul class="about-list">
             <li data-i18n-html="howto_c5_gamma"><strong>Kontrast / Gamma:</strong> Steuert die Helligkeitskurve. Kleinere Werte heben Schatten an, größere Werte machen dunkle Zonen tiefer.</li>
