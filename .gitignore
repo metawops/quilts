@@ -12,3 +12,6 @@ apple/QuiltsNative/.swiftpm/
 
 # Generated web version artifact (created dynamically by git hook from git tag)
 web/version.json
+
+# Local DOS / Turbo Pascal emulation workspace
+/TP/
