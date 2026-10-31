@@ -34,7 +34,7 @@ Im **März 1996** entstand die ursprüngliche Version dieses Programms – **`QU
 
 #### Technische Eckdaten des Originals von 1996 ([`legacy-1996/QUILTS.PAS`](legacy-1996/QUILTS.PAS))
 - **Umgebung & Grafik:** Rund 2.233 Zeilen Turbo Pascal mit dem BGI-Treiber `SVGA256.BGI` für 256-Farben-SVGA-Auflösungen unter MS-DOS.
-- **Zwei Symmetriegitter:** Vollständige Implementierung sowohl **quadratischer Quilts** (`iterateQuad`, $\mathbb{D}_4$- bzw. $\mathbb{Z}_4$-Symmetrie auf dem Einheitsquadrat) als auch **hexagonaler Quilts** (`iterateHex`, $\mathbb{D}_6$- bzw. $\mathbb{Z}_6$-Symmetrie auf dem hexagonalen Gitter).
+- **Zwei Symmetriegitter:** Vollständige Implementierung sowohl **quadratischer Quilts** (`iterateQuad`, 𝔻₄- bzw. ℤ₄-Symmetrie auf dem Einheitsquadrat) als auch **hexagonaler Quilts** (`iterateHex`, 𝔻₆- bzw. ℤ₆-Symmetrie auf dem hexagonalen Gitter).
 - **2D-Dichte-Histogramm & Kachelung:** Während der Iteration wurden die Trefferhäufigkeiten pro Pixel gezählt (`mcount`) und die Grundzelle periodisch zu einem nahtlosen $n \times n$-Teppich (*Quilt*) gekachelt – wahlweise Punkt für Punkt während der Rechnung oder im schnellen Block-Kopiermodus (`fastMode` via `GetImage`/`PutImage`).
 - **Farbpaletten & Editor:** Direkte Unterstützung der klassischen `.MAP`-Farbpaletten aus *Fractint* (83 Palettendateien von `ALTERN.MAP` über `FIRESTRM.MAP` und `ROYAL.MAP` bis hin zu eigenen Kreationen wie `STEFAN1.MAP`) sowie ein direkt in die SVGA-Benutzungsoberfläche integrierter **RGB-Paletten-Editor** mit Farbverlaufs-Interpolation (`[=] create range`) und Schwellenwert-Filterung (`lowBorder`).
 - **Parameter-Presets (`.QUP`):** 21 gespeicherte Parameterdateien (`DEFAULT.QUP`, `ABB2_6.QUP` bis `ABBD_9.QUP`), die exakt die Buch-Abbildungen aus *Symmetry in Chaos* rekonstruieren.
@@ -48,7 +48,7 @@ Im **März 1996** entstand die ursprüngliche Version dieses Programms – **`QU
 Fast genau dreißig Jahre nach den ersten Zeilen in Turbo Pascal wurden alle Originaldateien von einer alten Diskette gerettet und in einer modernen, modularen Multi-Target-Architektur neu implementiert:
 
 #### 1. 🖼 5K / Dual-5K Ultra-HD Wallpaper Studio
-Da die chaotischen Attraktoren auf dem Torus doppelt-periodisch sind, lassen sie sich ohne jede geometrische Verzerrung auf beliebige Breitbild-Formate ($16:9$, $32:9$, $4:3$, $1:1$) kacheln:
+Da die chaotischen Attraktoren auf dem Torus doppelt-periodisch sind, lassen sie sich ohne jede geometrische Verzerrung auf beliebige Breitbild-Formate (16:9, 32:9, 4:3, 1:1) kacheln:
 - **Dual 5K Multi-Monitor Split (`2× 5120×2880 px`):** Berechnet ein nahtlos verbundenes $10240 \times 2880$-Panorama ($32:9$, 29,5 Megapixel) und exportiert automatisch zwei passgenau aneinander anschließende 5K-PNG-Dateien (`_5K_LEFT` und `_5K_RIGHT`) für zwei nebeneinander stehende 5K-Monitore.
 - **Weitere Direkt-Presets:** Apple 5K Studio Display ($5120 \times 2880$), Apple 6K Pro Display XDR ($6016 \times 3384$), 4K UHD ($3840 \times 2160$), iPad Pro 13" ($2752 \times 2064$) und 4K-Kunstdruck-Quadrat ($4096 \times 4096$).
 - **Sofort-Export & Exaktes Quantil-/CDF-Color-Matching:** Wahlweise wird direkt das im Hauptfenster über Milliarden Iterationen gereifte, rauschfreie Live-Histogramm mit bilinearer Subpixel-Kantenglättung in unter einer Sekunde exportiert – oder ein eigenes Ultra-HD-Histogramm ($1440 \times 1440$ bzw. $2048 \times 2048$ Pixel pro Einzelkachel) neu berechnet und über *Cumulative Distribution Function (CDF) Matching* exakt auf die Farbverteilung des Live-Bildes abgeglichen.
@@ -126,24 +126,23 @@ $$f(X) = p(X) + L(X)$$
 
 liften, wobei $p(X + \ell) = p(X)$ für alle $\ell \in \mathcal{L}$ doppelt-periodisch ist und $L$ eine lineare Abbildung bezeichnet, die das Gitter $\mathcal{L}$ invariant lässt. Fordert man, dass $f$ mit der Symmetriegruppe (Holohedrie) des Gitters kommutiert (bzw. bis auf Drehsymmetrie kommutiert), entstehen bei der Iteration $X_{k+1} = f(X_k) \bmod \mathcal{L}$ beschränkte chaotische Attraktoren, die sich periodisch in der Ebene als nahtlose **Quilt-Muster** aneinanderfügen lassen.
 
-##### A. Quadratische Quilts ($\mathbb{D}_4$- und $\mathbb{Z}_4$-Symmetrie)
-Auf dem Einheitsgitter $[0, 1)^2$ lautet die im Artikel *Symmetric Chaos* von Field & Golubitsky (1990, [DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939), Gleichung 1f) eingeführte $\mathbb{D}_4$-symmetrische Grundform:
+##### A. Quadratische Quilts (𝔻₄- und ℤ₄-Symmetrie)
+Auf dem Einheitsgitter $[0, 1)^2$ lautet die im Artikel *Symmetric Chaos* von Field & Golubitsky (1990, [DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939), Gleichung 1f) eingeführte Grundform der Symmetriegruppe $\mathbb{D}_4$:
 
 $$f(x, y) = \lambda \begin{pmatrix} \sin(2\pi x) \\ \sin(2\pi y) \end{pmatrix} + \alpha \begin{pmatrix} \sin(2\pi x)\cos(2\pi y) \\ \sin(2\pi y)\cos(2\pi x) \end{pmatrix} + \beta \begin{pmatrix} \sin(4\pi x) \\ \sin(4\pi y) \end{pmatrix} + \gamma \begin{pmatrix} \sin(6\pi x)\cos(4\pi y) \\ \sin(6\pi y)\cos(4\pi x) \end{pmatrix} + m \begin{pmatrix} x \\ y \end{pmatrix} \pmod 1$$
 
-In *Symmetry in Chaos* (1992) und in `QUILTS.PAS` (`iterateQuad`) ist diese Vorschrift zusätzlich um einen **Chiralitäts-/Symmetriebrechungsterm $\omega$** (bricht die Spiegelsymmetrie von $\mathbb{D}_4$ auf die reine Vierfach-Drehsymmetrie $\mathbb{Z}_4$) sowie eine **Gitterverschiebung $\text{shift}$** erweitert:
+In *Symmetry in Chaos* (1992) und in `QUILTS.PAS` (`iterateQuad`) ist diese Vorschrift zusätzlich um einen **Chiralitäts-/Symmetriebrechungsterm** $\omega$ (bricht die Spiegelsymmetrie von $\mathbb{D}_4$ auf die reine Vierfach-Drehsymmetrie $\mathbb{Z}_4$) sowie eine **Gitterverschiebung** $\mathrm{shift}$ erweitert:
 
-$$\begin{aligned}
-x_{\text{neu}} &= \bigl((\lambda + \alpha \cos(2\pi y))\sin(2\pi x) - \omega \sin(2\pi y) + \beta \sin(4\pi x) + \gamma \sin(6\pi x)\cos(4\pi y) + m \cdot x + \text{shift}\bigr) \bmod 1 \\
-y_{\text{neu}} &= \bigl((\lambda + \alpha \cos(2\pi x))\sin(2\pi y) + \omega \sin(2\pi x) + \beta \sin(4\pi y) + \gamma \sin(6\pi y)\cos(4\pi x) + m \cdot y + \text{shift}\bigr) \bmod 1
-\end{aligned}$$
+$$x_{\mathrm{neu}} = \bigl((\lambda + \alpha \cos(2\pi y))\sin(2\pi x) - \omega \sin(2\pi y) + \beta \sin(4\pi x) + \gamma \sin(6\pi x)\cos(4\pi y) + m \cdot x + \mathrm{shift}\bigr) \bmod 1$$
 
-mit reellen Parametern $\lambda, \alpha, \beta, \gamma, \omega, \text{shift} \in \mathbb{R}$ und ganzzahligem Gitterfaktor $m \in \mathbb{Z}$.
+$$y_{\mathrm{neu}} = \bigl((\lambda + \alpha \cos(2\pi x))\sin(2\pi y) + \omega \sin(2\pi x) + \beta \sin(4\pi y) + \gamma \sin(6\pi y)\cos(4\pi x) + m \cdot y + \mathrm{shift}\bigr) \bmod 1$$
 
-##### B. Hexagonale Quilts ($\mathbb{D}_6$- und $\mathbb{Z}_6$-Symmetrie)
+mit reellen Parametern $\lambda, \alpha, \beta, \gamma, \omega, \mathrm{shift} \in \mathbb{R}$ und ganzzahligem Gitterfaktor $m \in \mathbb{Z}$.
+
+##### B. Hexagonale Quilts (𝔻₆- und ℤ₆-Symmetrie)
 Auf dem hexagonalen Gitter mit den Basisvektoren $k_1 = (1, 0)^T$ und $k_2 = \bigl(\tfrac{1}{2}, \tfrac{\sqrt{3}}{2}\bigr)^T$ nutzt `iterateHex` drei um $120^\circ$ gedrehte Wellenvektor-Systeme erster, zweiter und dritter harmonischer Ordnung. Die Iteration koppelt den linearen Gitteranteil $(a x - b y,\; a y + b x)$ mit den trigonometrischen Summen der Parameter $\lambda, \alpha, \beta, \gamma, \omega$, transformiert die Koordinaten über
 
-$$b_y = \frac{2}{\sqrt{3}}\, y_{\text{neu}}, \qquad b_x = x_{\text{neu}} - \frac{1}{2}\, b_y$$
+$$b_y = \frac{2}{\sqrt{3}}\, y_{\mathrm{neu}}, \qquad b_x = x_{\mathrm{neu}} - \frac{1}{2}\, b_y$$
 
 in das schiefwinklige Fundamentalgebiet $[0, 1)^2$, reduziert modulo $1$ und projiziert für den nächsten Iterationsschritt zurück in kartesische Koordinaten.
 
@@ -151,11 +150,11 @@ in das schiefwinklige Fundamentalgebiet $[0, 1)^2$, reduziert modulo $1$ und pro
 
 #### 2. Planare symmetrische Attraktoren („Symmetric Icons“)
 
-Neben den Torus-Abbildungen beschreibt das Paper *Symmetric Chaos* (Field & Golubitsky, 1990) auch die Familie der $\mathbb{D}_n$- und $\mathbb{Z}_n$-äquivarianten Abbildungen in der komplexen Ebene $\mathbb{C}$ (mit $u = z\bar{z} = |z|^2$ und $v = z^n$):
+Neben den Torus-Abbildungen beschreibt das Paper *Symmetric Chaos* (Field & Golubitsky, 1990) auch die Familie der bezüglich $\mathbb{D}_n$ und $\mathbb{Z}_n$ äquivarianten Abbildungen in der komplexen Ebene $\mathbb{C}$ (mit $u = z\bar{z} = |z|^2$ und $v = z^n$):
 
 $$f(z) = \bigl(\lambda + \alpha u + \beta \mathrm{Re}(v) + \omega i\bigr)z + \gamma \bar{z}^{n-1} + \delta \bigl(\mathrm{Re}((z/|z|)^n)\bigr)^p \frac{z}{|z|}$$
 
-- Für $\omega = 0$ und $\delta = 0$ ergibt sich die klassische polynomiale $\mathbb{D}_n$-Familie (Gleichung 1a).
+- Für $\omega = 0$ und $\delta = 0$ ergibt sich die klassische polynomiale Familie mit Symmetrie $\mathbb{D}_n$ (Gleichung 1a).
 - Für $\omega \neq 0$ wird die Spiegelsymmetrie zu $\mathbb{Z}_n$ gebrochen (Gleichung 1c).
 - Für $\delta \neq 0$ entsteht nahe dem Ursprung $z = 0$ eine zusätzliche nicht-polynomiale Skalierungsstruktur (Gleichung 1d).
 
@@ -167,7 +166,7 @@ Sowohl das von Field & Golubitsky entwickelte Programmpaket *Prism* (`iter` & `d
 
 1. Nach dem Verwerfen einer kurzen Einschwingphase (*Transienten*) wird die Abbildung millionenfach iteriert.
 2. Für jedes getroffene Pixel $(i, j)$ wird ein Zähler $H(i, j)$ inkrementiert.
-3. Da die Trefferverteilung extrem steil verläuft (typischerweise liegen über $95\,\%$ aller getroffenen Pixel im Bereich kleiner Trefferzahlen, während scharfe Kaustiken und Faltkanten extrem hohe Spitzenwerte aufweisen), wird die Trefferzahl über Farbpaletten bzw. nichtlineare Farbbänder auf RGB-Werte abgebildet.
+3. Da die Trefferverteilung extrem steil verläuft (typischerweise liegen über 95 % aller getroffenen Pixel im Bereich kleiner Trefferzahlen, während scharfe Kaustiken und Faltkanten extrem hohe Spitzenwerte aufweisen), wird die Trefferzahl über Farbpaletten bzw. nichtlineare Farbbänder auf RGB-Werte abgebildet.
 
 ---
 
@@ -229,7 +228,7 @@ In **March 1996**, the original version of this software – **`QUILTS.PAS` (Qui
 
 #### Technical Specifications of the 1996 Original ([`legacy-1996/QUILTS.PAS`](legacy-1996/QUILTS.PAS))
 - **Environment & Graphics:** Approximately 2,233 lines of Turbo Pascal with the `SVGA256.BGI` driver for 256-color SVGA modes under MS-DOS.
-- **Two Symmetry Lattices:** Full implementation of both **square quilts** (`iterateQuad`, $\mathbb{D}_4$ / $\mathbb{Z}_4$ symmetry on the unit square) and **hexagonal quilts** (`iterateHex`, $\mathbb{D}_6$ / $\mathbb{Z}_6$ symmetry on the hexagonal lattice).
+- **Two Symmetry Lattices:** Full implementation of both **square quilts** (`iterateQuad`, 𝔻₄ / ℤ₄ symmetry on the unit square) and **hexagonal quilts** (`iterateHex`, 𝔻₆ / ℤ₆ symmetry on the hexagonal lattice).
 - **2D Density Histogram & Tiling:** Pixel hit frequencies were accumulated during iteration (`mcount`), and the fundamental cell was tiled periodically into a seamless $n \times n$ tapestry (*Quilt*) – selectable either point-by-point live during computation or via fast block-copy mode (`fastMode` using `GetImage`/`PutImage`).
 - **Color Palettes & Editor:** Direct support for classic `.MAP` color palettes from *Fractint* (83 palette files from `ALTERN.MAP` to `FIRESTRM.MAP`, `ROYAL.MAP`, and custom creations like `STEFAN1.MAP`), as well as an **RGB palette editor** directly integrated into the SVGA user interface featuring gradient interpolation (`[=] create range`) and threshold filtering (`lowBorder`).
 - **Parameter Presets (`.QUP`):** 21 saved parameter files (`DEFAULT.QUP`, `ABB2_6.QUP` through `ABBD_9.QUP`) accurately reconstructing the figures from *Symmetry in Chaos*.
@@ -243,7 +242,7 @@ In **March 1996**, the original version of this software – **`QUILTS.PAS` (Qui
 Nearly thirty years after the first lines of code in Turbo Pascal, all original files were rescued from a vintage floppy disk and re-implemented in a modern, modular multi-target architecture:
 
 #### 1. 🖼 5K / Dual-5K Ultra-HD Wallpaper Studio
-Because chaotic attractors on the torus are doubly periodic, they can be tiled across arbitrary widescreen aspect ratios ($16:9$, $32:9$, $4:3$, $1:1$) without any geometric distortion:
+Because chaotic attractors on the torus are doubly periodic, they can be tiled across arbitrary widescreen aspect ratios (16:9, 32:9, 4:3, 1:1) without any geometric distortion:
 - **Dual 5K Multi-Monitor Split (`2× 5120×2880 px`):** Computes a seamless $10240 \times 2880$ panorama ($32:9$, 29.5 megapixels) and automatically exports two perfectly matching 5K PNG files (`_5K_LEFT` and `_5K_RIGHT`) for dual adjacent 5K displays.
 - **Additional Presets:** Apple 5K Studio Display ($5120 \times 2880$), Apple 6K Pro Display XDR ($6016 \times 3384$), 4K UHD ($3840 \times 2160$), iPad Pro 13" ($2752 \times 2064$), and 4K Fine Art Square ($4096 \times 4096$).
 - **Instant Export & Exact Quantile / CDF Color Matching:** Either immediately export the live histogram refined over billions of iterations in under one second using bilinear subpixel smoothing – or compute a dedicated Ultra-HD histogram ($1440 \times 1440$ or $2048 \times 2048$ pixels per tile) matched precisely to the live viewport's color distribution via *Cumulative Distribution Function (CDF) Matching*.
@@ -321,24 +320,23 @@ $$f(X) = p(X) + L(X)$$
 
 where $p(X + \ell) = p(X)$ is doubly periodic for all $\ell \in \mathcal{L}$, and $L$ denotes a linear map preserving the lattice $\mathcal{L}$. When $f$ commutes (or commutes up to rotational symmetry) with the symmetry group (holohedry) of the lattice, iteration $X_{k+1} = f(X_k) \bmod \mathcal{L}$ yields bounded chaotic attractors that tile seamlessly across the plane as **quilt patterns**.
 
-##### A. Square Quilts ($\mathbb{D}_4$ and $\mathbb{Z}_4$ Symmetry)
-On the unit square $[0, 1)^2$, the basic $\mathbb{D}_4$-symmetric map introduced in *Symmetric Chaos* by Field & Golubitsky (1990, [DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939), equation 1f) is:
+##### A. Square Quilts (𝔻₄ and ℤ₄ Symmetry)
+On the unit square $[0, 1)^2$, the basic map with $\mathbb{D}_4$ symmetry introduced in *Symmetric Chaos* by Field & Golubitsky (1990, [DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939), equation 1f) is:
 
 $$f(x, y) = \lambda \begin{pmatrix} \sin(2\pi x) \\ \sin(2\pi y) \end{pmatrix} + \alpha \begin{pmatrix} \sin(2\pi x)\cos(2\pi y) \\ \sin(2\pi y)\cos(2\pi x) \end{pmatrix} + \beta \begin{pmatrix} \sin(4\pi x) \\ \sin(4\pi y) \end{pmatrix} + \gamma \begin{pmatrix} \sin(6\pi x)\cos(4\pi y) \\ \sin(6\pi y)\cos(4\pi x) \end{pmatrix} + m \begin{pmatrix} x \\ y \end{pmatrix} \pmod 1$$
 
-In *Symmetry in Chaos* (1992) and in `QUILTS.PAS` (`iterateQuad`), this mapping is augmented by a **chirality / symmetry-breaking term $\omega$** (breaking the reflection symmetry of $\mathbb{D}_4$ down to 4-fold rotational symmetry $\mathbb{Z}_4$) and a **lattice phase offset $\text{shift}$**:
+In *Symmetry in Chaos* (1992) and in `QUILTS.PAS` (`iterateQuad`), this mapping is augmented by a **chirality / symmetry-breaking term** $\omega$ (breaking the reflection symmetry of $\mathbb{D}_4$ down to 4-fold rotational symmetry $\mathbb{Z}_4$) and a **lattice phase offset** $\mathrm{shift}$:
 
-$$\begin{aligned}
-x_{\text{new}} &= \bigl((\lambda + \alpha \cos(2\pi y))\sin(2\pi x) - \omega \sin(2\pi y) + \beta \sin(4\pi x) + \gamma \sin(6\pi x)\cos(4\pi y) + m \cdot x + \text{shift}\bigr) \bmod 1 \\
-y_{\text{new}} &= \bigl((\lambda + \alpha \cos(2\pi x))\sin(2\pi y) + \omega \sin(2\pi x) + \beta \sin(4\pi y) + \gamma \sin(6\pi y)\cos(4\pi x) + m \cdot y + \text{shift}\bigr) \bmod 1
-\end{aligned}$$
+$$x_{\mathrm{new}} = \bigl((\lambda + \alpha \cos(2\pi y))\sin(2\pi x) - \omega \sin(2\pi y) + \beta \sin(4\pi x) + \gamma \sin(6\pi x)\cos(4\pi y) + m \cdot x + \mathrm{shift}\bigr) \bmod 1$$
 
-with real parameters $\lambda, \alpha, \beta, \gamma, \omega, \text{shift} \in \mathbb{R}$ and integer lattice scaling $m \in \mathbb{Z}$.
+$$y_{\mathrm{new}} = \bigl((\lambda + \alpha \cos(2\pi x))\sin(2\pi y) + \omega \sin(2\pi x) + \beta \sin(4\pi y) + \gamma \sin(6\pi y)\cos(4\pi x) + m \cdot y + \mathrm{shift}\bigr) \bmod 1$$
 
-##### B. Hexagonal Quilts ($\mathbb{D}_6$ and $\mathbb{Z}_6$ Symmetry)
+with real parameters $\lambda, \alpha, \beta, \gamma, \omega, \mathrm{shift} \in \mathbb{R}$ and integer lattice scaling $m \in \mathbb{Z}$.
+
+##### B. Hexagonal Quilts (𝔻₆ and ℤ₆ Symmetry)
 On the hexagonal lattice with basis vectors $k_1 = (1, 0)^T$ and $k_2 = \bigl(\tfrac{1}{2}, \tfrac{\sqrt{3}}{2}\bigr)^T$, `iterateHex` employs three $120^\circ$-rotated wave-vector families of first, second, and third harmonic order. The iteration couples the linear lattice term $(a x - b y,\; a y + b x)$ with the trigonometric sums governed by parameters $\lambda, \alpha, \beta, \gamma, \omega$, maps the coordinates via
 
-$$b_y = \frac{2}{\sqrt{3}}\, y_{\text{new}}, \qquad b_x = x_{\text{new}} - \frac{1}{2}\, b_y$$
+$$b_y = \frac{2}{\sqrt{3}}\, y_{\mathrm{new}}, \qquad b_x = x_{\mathrm{new}} - \frac{1}{2}\, b_y$$
 
 into the oblique fundamental domain $[0, 1)^2$, performs modulo $1$ reduction, and projects back to Cartesian space for the next iteration.
 
@@ -346,11 +344,11 @@ into the oblique fundamental domain $[0, 1)^2$, performs modulo $1$ reduction, a
 
 #### 2. Planar Symmetric Attractors ("Symmetric Icons")
 
-In addition to torus maps, *Symmetric Chaos* (Field & Golubitsky, 1990) details the family of $\mathbb{D}_n$- and $\mathbb{Z}_n$-equivariant maps in the complex plane $\mathbb{C}$ (with $u = z\bar{z} = |z|^2$ and $v = z^n$):
+In addition to torus maps, *Symmetric Chaos* (Field & Golubitsky, 1990) details the family of equivariant maps with $\mathbb{D}_n$ and $\mathbb{Z}_n$ symmetry in the complex plane $\mathbb{C}$ (with $u = z\bar{z} = |z|^2$ and $v = z^n$):
 
 $$f(z) = \bigl(\lambda + \alpha u + \beta \mathrm{Re}(v) + \omega i\bigr)z + \gamma \bar{z}^{n-1} + \delta \bigl(\mathrm{Re}((z/|z|)^n)\bigr)^p \frac{z}{|z|}$$
 
-- For $\omega = 0$ and $\delta = 0$, this yields the classical polynomial $\mathbb{D}_n$ family (equation 1a).
+- For $\omega = 0$ and $\delta = 0$, this yields the classical polynomial family with $\mathbb{D}_n$ symmetry (equation 1a).
 - For $\omega \neq 0$, reflection symmetry is broken down to $\mathbb{Z}_n$ (equation 1c).
 - For $\delta \neq 0$, an additional non-polynomial scaling structure emerges near the origin $z = 0$ (equation 1d).
 
@@ -362,7 +360,7 @@ Both the *Prism* software suite (`iter` & `draw`) developed by Field & Golubitsk
 
 1. After discarding an initial transient phase, the map is iterated millions or billions of times.
 2. For each visited pixel $(i, j)$, a hit counter $H(i, j)$ is incremented.
-3. Because the distribution of visits is highly non-uniform (typically over $95\%$ of all visited pixels exhibit low counts, while caustic folds and sharp boundaries contain high peak densities), hit frequencies are mapped to RGB colors via color palettes and nonlinear scaling bands.
+3. Because the distribution of visits is highly non-uniform (typically over 95% of all visited pixels exhibit low counts, while caustic folds and sharp boundaries contain high peak densities), hit frequencies are mapped to RGB colors via color palettes and nonlinear scaling bands.
 
 ---
 
