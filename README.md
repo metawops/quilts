@@ -83,7 +83,6 @@ flowchart LR
 | **[`web/`](web/)** | Moderne Web-App (HTML5 2D-Canvas, Multi-Core Web Worker Pool, **5K / Dual-5K Wallpaper Studio**, 16×16 Paletten-Editor & Benchmark-Arena) |
 | **[`apple/QuiltsNative/`](apple/QuiltsNative/)** | Natives Swift / SwiftUI Projekt für macOS, iPadOS & iOS (`SIMD4`, Apple `Accelerate` & Metal GPU Compute Shader [`QuiltsCompute.metal`](apple/QuiltsNative/Sources/QuiltsCompute.metal)) |
 | **[`legacy-1996/`](legacy-1996/)** | Gerettete Originaldateien von März/April 1996 ([`QUILTS.PAS`](legacy-1996/QUILTS.PAS), `.QUP`, `.MAP`, Delphi-Prototyp) |
-| **[`references/`](references/)** | Mathematische Referenzliteratur ([`symmetric_chaos.pdf`](references/symmetric_chaos.pdf) von Field & Golubitsky, 1990) |
 
 ---
 
@@ -121,7 +120,7 @@ $$f(X) = p(X) + L(X)$$
 liften, wobei $p(X + \ell) = p(X)$ für alle $\ell \in \mathcal{L}$ doppelt-periodisch ist und $L$ eine lineare Abbildung bezeichnet, die das Gitter $\mathcal{L}$ invariant lässt. Fordert man, dass $f$ mit der Symmetriegruppe (Holohedrie) des Gitters kommutiert (bzw. bis auf Drehsymmetrie kommutiert), entstehen bei der Iteration $X_{k+1} = f(X_k) \bmod \mathcal{L}$ beschränkte chaotische Attraktoren, die sich periodisch in der Ebene als nahtlose **Quilt-Muster** aneinanderfügen lassen.
 
 #### A. Quadratische Quilts ($\mathbb{D}_4$- und $\mathbb{Z}_4$-Symmetrie)
-Auf dem Einheitsgitter $[0, 1)^2$ lautet die im Artikel [`references/symmetric_chaos.pdf`](references/symmetric_chaos.pdf) (Gleichung 1f) eingeführte $\mathbb{D}_4$-symmetrische Grundform:
+Auf dem Einheitsgitter $[0, 1)^2$ lautet die im Artikel *Symmetric Chaos* von Field & Golubitsky (1990, [DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939), Gleichung 1f) eingeführte $\mathbb{D}_4$-symmetrische Grundform:
 
 $$f(x, y) = \lambda \begin{pmatrix} \sin(2\pi x) \\ \sin(2\pi y) \end{pmatrix} + \alpha \begin{pmatrix} \sin(2\pi x)\cos(2\pi y) \\ \sin(2\pi y)\cos(2\pi x) \end{pmatrix} + \beta \begin{pmatrix} \sin(4\pi x) \\ \sin(4\pi y) \end{pmatrix} + \gamma \begin{pmatrix} \sin(6\pi x)\cos(4\pi y) \\ \sin(6\pi y)\cos(4\pi x) \end{pmatrix} + m \begin{pmatrix} x \\ y \end{pmatrix} \pmod 1$$
 
@@ -145,7 +144,7 @@ in das schiefwinklige Fundamentalgebiet $[0, 1)^2$, reduziert modulo $1$ und pro
 
 ### 2. Planare symmetrische Attraktoren („Symmetric Icons“)
 
-Neben den Torus-Abbildungen beschreibt das im Projekt abgelegte Referenz-Paper [`references/symmetric_chaos.pdf`](references/symmetric_chaos.pdf) auch die Familie der $\mathbb{D}_n$- und $\mathbb{Z}_n$-äquivarianten Abbildungen in der komplexen Ebene $\mathbb{C}$ (mit $u = z\bar{z} = |z|^2$ und $v = z^n$):
+Neben den Torus-Abbildungen beschreibt das Paper *Symmetric Chaos* (Field & Golubitsky, 1990) auch die Familie der $\mathbb{D}_n$- und $\mathbb{Z}_n$-äquivarianten Abbildungen in der komplexen Ebene $\mathbb{C}$ (mit $u = z\bar{z} = |z|^2$ und $v = z^n$):
 
 $$f(z) = \bigl(\lambda + \alpha u + \beta \operatorname{Re}(v) + \omega i\bigr)z + \gamma \bar{z}^{n-1} + \delta \bigl(\operatorname{Re}((z/|z|)^n)\bigr)^p \frac{z}{|z|}$$
 
@@ -167,8 +166,8 @@ Sowohl das von Field & Golubitsky entwickelte Programmpaket *Prism* (`iter` & `d
 
 ## Literatur & Referenzen
 
-1. **Originalartikel (im Repository als Referenz enthalten):**
-   - **Mike Field, Martin Golubitsky:** *„Symmetric Chaos: A pictorial exploration of an order imposed by symmetry within chaotic systems“*, in: **Computers in Physics**, Vol. 4, No. 5 (Sep/Oct 1990), S. 470–479. ([`references/symmetric_chaos.pdf`](references/symmetric_chaos.pdf), [DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939))
+1. **Originalartikel (1990):**
+   - **Mike Field, Martin Golubitsky:** *„Symmetric Chaos: A pictorial exploration of an order imposed by symmetry within chaotic systems“*, in: **Computers in Physics**, Vol. 4, No. 5 (Sep/Oct 1990), S. 470–479. ([DOI: 10.1063/1.4822939](https://doi.org/10.1063/1.4822939))
 2. **Das Standardwerk (Hauptquelle für `QUILTS.PAS` und die `.QUP`-Parameterdateien):**
    - **Michael Field, Martin Golubitsky:** *Symmetry in Chaos: A Search for Pattern in Mathematics, Art and Nature*, Oxford University Press, Oxford / New York, **1992**, ISBN 978-0-19-853689-5.
    - **Deutsche Ausgabe:** *Chaotische Symmetrien: Die Suche nach Mustern in Mathematik, Kunst und Natur*, Birkhäuser Verlag, Basel / Boston / Berlin, **1993**, ISBN 978-3-7643-2844-3.
