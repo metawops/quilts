@@ -524,6 +524,254 @@ function updateColorLut() {
   colorLutU32[255] = 0xffffffff;
 }
 
+// --- 7b. 2D Tone-Mapping & Gamma Transfer Curve ---
+function drawToneCurve() {
+  const canvas = document.getElementById("canvasToneCurve");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width > 0 ? rect.width : 260;
+  const h = rect.height > 0 ? rect.height : 86;
+
+  const targetW = Math.round(w * dpr);
+  const targetH = Math.round(h * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  // Robust theme detection (supports "dark", "light", and "light dark" from the system button)
+  const meta = document.querySelector('meta[name="color-scheme"]');
+  const scheme = meta ? meta.content.trim() : "";
+  let isDark = false;
+  if (scheme === "dark") {
+    isDark = true;
+  } else if (scheme === "light") {
+    isDark = false;
+  } else {
+    // "light dark" or empty: evaluate system media query
+    isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  const gridColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)";
+  const axisColor = isDark ? "rgba(255, 255, 255, 0.30)" : "rgba(0, 0, 0, 0.22)";
+  const labelColor = isDark ? "rgba(255, 255, 255, 0.82)" : "rgba(0, 0, 0, 0.72)";
+  const baseCurveColor = isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)";
+
+  // Canvas bounds
+  const padLeft = 24;
+  const padRight = 8;
+  const padTop = 6;
+  const padBottom = 16;
+  const plotW = Math.max(10, w - padLeft - padRight);
+  const plotH = Math.max(10, h - padTop - padBottom);
+
+  // Background plot box (deep dark inset in dark mode, crisp light in light mode)
+  ctx.fillStyle = isDark ? "rgba(10, 14, 20, 0.85)" : "rgba(244, 246, 250, 0.90)";
+  ctx.fillRect(padLeft, padTop, plotW, plotH);
+
+  // 1. Grid lines (25%, 50%, 75%)
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = gridColor;
+  ctx.setLineDash([3, 3]);
+  for (let s = 1; s <= 3; s++) {
+    const frac = s / 4;
+    // Horizontal grid line
+    const gy = padTop + plotH * (1 - frac);
+    ctx.beginPath();
+    ctx.moveTo(padLeft, gy);
+    ctx.lineTo(padLeft + plotW, gy);
+    ctx.stroke();
+
+    // Vertical grid line
+    const gx = padLeft + plotW * frac;
+    ctx.beginPath();
+    ctx.moveTo(gx, padTop);
+    ctx.lineTo(gx, padTop + plotH);
+    ctx.stroke();
+  }
+
+  // 2. Linear diagonal reference line (y = x)
+  ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.22)" : "rgba(0, 0, 0, 0.18)";
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(padLeft, padTop + plotH);
+  ctx.lineTo(padLeft + plotW, padTop);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Plot border
+  ctx.strokeStyle = axisColor;
+  ctx.strokeRect(padLeft, padTop, plotW, plotH);
+
+  // 3. Axis Tick Labels
+  ctx.font = "9px -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif";
+  ctx.fillStyle = labelColor;
+
+  // Y-axis tick labels
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.fillText("254", padLeft - 3, padTop + 4);
+  ctx.fillText("0", padLeft - 3, padTop + plotH);
+
+  // X-axis tick labels
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("0", padLeft, padTop + plotH + 3);
+
+  ctx.textAlign = "center";
+  ctx.fillText("Hits", padLeft + plotW * 0.5, padTop + plotH + 3);
+
+  ctx.textAlign = "right";
+  const maxHitVal = state.maxHit || 0;
+  let maxHitText = "Max";
+  if (maxHitVal >= 1000000) {
+    maxHitText = (maxHitVal / 1000000).toFixed(1) + "M";
+  } else if (maxHitVal >= 1000) {
+    maxHitText = (maxHitVal / 1000).toFixed(0) + "k";
+  } else if (maxHitVal > 0) {
+    maxHitText = String(maxHitVal);
+  }
+  ctx.fillText(maxHitText, padLeft + plotW, padTop + plotH + 3);
+
+  // 4. Mathematical Mapping Evaluation
+  const mode = state.toneMapping;
+  const gamma = Math.max(0.1, state.gamma);
+  const invGamma = 1.0 / gamma;
+  const maxH = Math.max(2, state.maxHit || 1000);
+  const logMax = Math.max(1.0, Math.log(maxH));
+
+  // Evaluate transfer function: t in [0, 1] -> y in [0, 1]
+  function evalCurve(t, applyGamma = true) {
+    if (mode === "classic1996") {
+      // Linear ramp up to 254 hits, then clamped flat
+      const hits = t * maxH;
+      return Math.min(1.0, hits / 254.0);
+    } else if (mode === "log") {
+      const mc = 1 + t * (maxH - 1);
+      const baseNorm = Math.min(1.0, Math.log(mc) / logMax);
+      return applyGamma ? Math.pow(baseNorm, invGamma) : baseNorm;
+    } else { // "sqrt"
+      const baseNorm = Math.min(1.0, Math.sqrt(t));
+      return applyGamma ? Math.pow(baseNorm, invGamma) : baseNorm;
+    }
+  }
+
+  const steps = 70;
+
+  // 5. Draw Base Curve (gamma = 1.0) as reference when mode != classic1996
+  if (mode !== "classic1996" && Math.abs(gamma - 1.0) > 0.03) {
+    ctx.strokeStyle = baseCurveColor;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const yVal = evalCurve(t, false);
+      const px = padLeft + t * plotW;
+      const py = padTop + (1 - yVal) * plotH;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // 6. Draw Gradient Fill Area under Active Curve
+  ctx.beginPath();
+  ctx.moveTo(padLeft, padTop + plotH);
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const yVal = evalCurve(t, true);
+    const px = padLeft + t * plotW;
+    const py = padTop + (1 - yVal) * plotH;
+    ctx.lineTo(px, py);
+  }
+  ctx.lineTo(padLeft + plotW, padTop + plotH);
+  ctx.closePath();
+
+  const fillGrad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+  if (mode === "classic1996") {
+    fillGrad.addColorStop(0, "rgba(225, 110, 40, 0.22)");
+    fillGrad.addColorStop(1, "rgba(225, 110, 40, 0.02)");
+  } else {
+    fillGrad.addColorStop(0, isDark ? "rgba(47, 129, 247, 0.35)" : "rgba(9, 105, 218, 0.22)");
+    fillGrad.addColorStop(1, isDark ? "rgba(47, 129, 247, 0.02)" : "rgba(9, 105, 218, 0.02)");
+  }
+  ctx.fillStyle = fillGrad;
+  ctx.fill();
+
+  // 7. Draw Active Curve Stroke (with vertical palette gradient!)
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const yVal = evalCurve(t, true);
+    const px = padLeft + t * plotW;
+    const py = padTop + (1 - yVal) * plotH;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+
+  // Generate stroke gradient from active palette
+  const pal = state.previewPalette || state.palette;
+  let strokeStyle = isDark ? "#58a6ff" : "#0969da";
+  if (pal && pal.colors) {
+    const grad = ctx.createLinearGradient(0, padTop + plotH, 0, padTop);
+    const numStops = 8;
+    for (let k = 0; k <= numStops; k++) {
+      const rawIdx = Math.min(254, Math.max(1, Math.round(1 + (k / numStops) * 253)));
+      const shifted = 1 + ((rawIdx - 1 + state.colorOffset) % 254);
+      const [r, g, b] = pal.colors[shifted] || [128, 128, 128];
+      grad.addColorStop(k / numStops, `rgb(${r},${g},${b})`);
+    }
+    strokeStyle = grad;
+  }
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+
+  // 8. Low-Border Threshold Marker
+  if (state.lowBorder > 0) {
+    const lowFrac = Math.min(1.0, state.lowBorder / maxH);
+    const lx = padLeft + lowFrac * plotW;
+    ctx.strokeStyle = "rgba(235, 87, 87, 0.85)";
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(lx, padTop);
+    ctx.lineTo(lx, padTop + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.restore();
+
+  // 9. Update Badge Text
+  const badge = document.getElementById("toneCurveBadge");
+  if (badge) {
+    if (mode === "classic1996") {
+      badge.textContent = typeof t === "function" ? t("lbl_curve_clamping_inactive") : "≤ 254 (γ inaktiv)";
+      badge.title = typeof t === "function" ? t("opt_tonemap_classic") : "Pascal 1996 Original (Clamping <= 254)";
+      badge.classList.add("inactive");
+    } else if (mode === "log") {
+      badge.textContent = `Log (γ = ${gamma.toFixed(2)})`;
+      badge.title = "";
+      badge.classList.remove("inactive");
+    } else {
+      badge.textContent = `Sqrt (γ = ${gamma.toFixed(2)})`;
+      badge.title = "";
+      badge.classList.remove("inactive");
+    }
+  }
+}
+
 function renderFrame() {
   updateColorLut();
   const hist = state.histogram;
@@ -610,6 +858,7 @@ function renderFrame() {
 
   ctx.putImageData(imageData, 0, 0);
   updateTelemetryDOM();
+  drawToneCurve();
 }
 
 // --- 8. Simulation Loop ---
@@ -1861,6 +2110,7 @@ function initThemeSwitcher() {
     buttons.forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.scheme === current);
     });
+    drawToneCurve();
   };
 
   buttons.forEach((btn) => {
@@ -1900,6 +2150,7 @@ function initLanguageSwitcher() {
   window.addEventListener("quilts-language-changed", () => {
     updateTelemetryDOM();
     updateScalingIndicator();
+    drawToneCurve();
     const sampDialog = document.getElementById("dialogSamplingInfo");
     if (sampDialog && sampDialog.open) {
       openSamplingDialog();
@@ -1991,6 +2242,8 @@ async function init() {
   }
   syncQuickbarWidth();
   updateScalingIndicator();
+  window.addEventListener("resize", drawToneCurve);
+  drawToneCurve();
 
   const hasRustWasm = await tryLoadRustWasm();
   document.getElementById("engineHardwareHint").textContent =

@@ -196,6 +196,21 @@
           <option value="classic1996" data-i18n="opt_tonemap_classic">3. Pascal 1996 Original (Clamping <= 254)</option>
         </select>
 
+        <!-- 2D Tone-Mapping & Gamma Transfer Curve -->
+        <div class="tone-curve-widget">
+          <div class="tone-curve-header">
+            <div class="tone-curve-title-wrap">
+              <span class="tone-curve-title" data-i18n="lbl_tone_curve">Übertragungskurve</span>
+              <span class="tone-curve-info-icon" aria-hidden="true">ⓘ</span>
+              <div class="tone-curve-tooltip" data-i18n="lbl_tone_curve_tooltip">Übertragungsfunktion: Treffer-Häufigkeit (Hits) → Palettenindex (Farbe)</div>
+            </div>
+            <span id="toneCurveBadge" class="tone-curve-badge">Log (γ = 1.00)</span>
+          </div>
+          <div class="tone-curve-canvas-wrap">
+            <canvas id="canvasToneCurve" height="88"></canvas>
+          </div>
+        </div>
+
         <div class="slider-group">
           <div class="slider-header">
             <label for="sliderGamma" data-i18n="lbl_gamma">Gamma-Kompression (Kontrast)</label>
